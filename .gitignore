@@ -1,0 +1,8 @@
+./chain-load-test/node_modules
+./chain-load-test/.env
+/node_modules
+
+/dist
+/.idea
+.env
+.DS_Store

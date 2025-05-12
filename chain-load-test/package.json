@@ -1,0 +1,14 @@
+{
+  "name": "chain-tests",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@polkadot/api": "^15.9.3"
+  }
+}
