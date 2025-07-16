@@ -1,8 +1,8 @@
-./chain-load-test/node_modules
-./chain-load-test/.env
-./load-testing/node_modules
-./load-testing/.env
-./load-testing/testnet-loadtest-plan.md
+chain-load-test/node_modules
+chain-load-test/.env
+load-testing/node_modules
+load-testing/.env
+load-testing/testnet-loadtest-plan.md
 /node_modules
 
 /dist
