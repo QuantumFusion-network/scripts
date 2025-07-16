@@ -1,0 +1,19 @@
+{
+  "name": "quantum-fusion-load-test",
+  "version": "1.0.0",
+  "description": "Comprehensive load testing tool for Quantum Fusion blockchain network",
+  "main": "tests/universal-test.js",
+  "scripts": {
+    "test:baseline": "node tests/universal-test.js baseline",
+    "test:load": "node tests/universal-test.js load",
+    "test:stress": "node tests/universal-test.js stress",
+    "test:spike": "node tests/universal-test.js spike",
+    "test:endurance": "node tests/universal-test.js endurance"
+  },
+  "dependencies": {
+    "@polkadot/api": "^12.0.1",
+    "@polkadot/keyring": "^13.0.1"
+  },
+  "author": "Quantum Fusion Team",
+  "license": "MIT"
+} 
