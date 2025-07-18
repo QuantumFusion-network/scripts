@@ -1,0 +1,31 @@
+{
+  "name": "tps-real",
+  "version": "1.0.0",
+  "description": "Real TPS measurement tool for Polkadot/Substrate blockchains with QuantumFusion support",
+  "type": "module",
+  "main": "src/transaction_sender.js",
+  "scripts": {
+    "sender": "node src/transaction_sender.js",
+    "monitor": "node src/tps_monitor.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@polkadot/api": "^14.2.2",
+    "@polkadot/util-crypto": "^13.1.1",
+    "commander": "^11.1.0"
+  },
+  "keywords": [
+    "polkadot",
+    "substrate",
+    "quantumfusion",
+    "tps",
+    "blockchain",
+    "performance",
+    "measurement"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 
