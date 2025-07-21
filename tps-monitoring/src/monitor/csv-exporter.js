@@ -21,7 +21,7 @@ export class CSVExporter {
   }
 
   generateDefaultFilename() {
-    return `tps_stats_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
+    return `src/csv-report/tps_stats_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`
   }
 
   exportToCSV(filename = 'tps_stats.csv') {

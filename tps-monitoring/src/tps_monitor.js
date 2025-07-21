@@ -9,9 +9,9 @@ const main = async () => {
     .name('tps_monitor')
     .description('TPS monitor for blockchain')
     .version('1.0.0')
-    .requiredOption('-n, --node <url>', 'Node URL (e.g.: ws://localhost:9944)')
+    .option('-n, --node <url>', 'Node URL', 'ws://localhost:9944')
     .option('-a, --addresses <addresses>', 'Addresses to track (comma-separated)')
-    .option('-o, --output <filename>', 'CSV export file', 'tps_stats.csv')
+    .option('-o, --output <filename>', 'CSV export file', 'src/csv-report/tps_stats.csv')
   
   program.parse()
   const options = program.opts()
