@@ -221,10 +221,10 @@ class TPSMonitor {
       
       console.log(`💾 [BLOCK] Data added to CSV (total records: ${this.csvData.length})`)
       
-      // Show statistics every 10 blocks
+      // Show statistics every 10 blocks (reuse already calculated avgBlockTime for efficiency)
       if (this.totalBlocks % 10 === 0) {
         console.log(`\n📊 [BLOCK] Every 10 blocks - showing statistics:`)
-        this.showStats()
+        this.showStats(avgBlockTime)  // Pass pre-calculated value to avoid duplicate computation
       }
       
     } catch (error) {
@@ -242,9 +242,9 @@ class TPSMonitor {
     })
   }
 
-  showStats() {
+  showStats(preCalculatedAvgBlockTime = null) {
     const runtime = (Date.now() - this.startTime) / 1000
-    const avgBlockTime = this.calculateAverageBlockTime()
+    const avgBlockTime = preCalculatedAvgBlockTime ?? this.calculateAverageBlockTime()
     
     // Calculate average TPS using MEASURED data
     let avgTotalTPS = 0
