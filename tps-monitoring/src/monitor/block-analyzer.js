@@ -1,4 +1,5 @@
 import { Utils } from '../shared/utils.js'
+import { monitorLogger } from '../shared/logger.js'
 
 // Class for analyzing blocks and extrinsics (transactions) in blockchain
 // Main task: extract balance transfers and count them
@@ -7,6 +8,7 @@ export class BlockAnalyzer {
   constructor(targetAddresses = []) {
     this.targetAddresses = targetAddresses
     this.reporter = null  // Will be set externally
+    this.logger = monitorLogger.child('BLOCK-ANALYZER')
   }
 
   // Set reporter for logging
@@ -18,12 +20,13 @@ export class BlockAnalyzer {
   setTargetAddresses(addresses) {
     this.targetAddresses = addresses
     
-    // Log only if reporter is available
-    if (this.reporter) {
-      console.log(`🔄 [ANALYZER] Updated target addresses: ${addresses.length} total`)
-      if (addresses.length > 0) {
-        Utils.logAddressList(addresses, 'ANALYZER')
-      }
+    this.logger.info('🔄 Updated target addresses', {
+      addressCount: addresses.length,
+      trackingMode: addresses.length > 0 ? 'specific_addresses' : 'all_transactions'
+    })
+    
+    if (addresses.length > 0) {
+      Utils.logAddressList(addresses, 'ANALYZER', this.logger)
     }
   }
 
@@ -95,7 +98,9 @@ export class BlockAnalyzer {
           return signer.toString()
         }
       } catch (error) {
-        console.log(`⚠️  [SIGNER] Could not extract signer: ${error.message}`)
+        this.logger.warn('⚠️ Could not extract signer from signature', {
+          error: error.message
+        })
       }
     }
     
@@ -107,14 +112,23 @@ export class BlockAnalyzer {
   analyzeExtrinsics(extrinsics) {
     let totalBalanceTransfers = 0  // Total number of transfers in block
     let ourBalanceTransfers = 0    // Number of our transfers
+    let systemTransactions = 0
+    let otherTransactions = 0
+    
+    this.logger.debug('🔍 Starting block analysis', {
+      totalExtrinsics: extrinsics.length,
+      targetAddressesCount: this.targetAddresses.length
+    })
     
     // Go through each extrinsic (transaction) in block
     for (const ext of extrinsics) {
       // Skip system transactions (they are not from users)
       if (this.isSystemInherent(ext)) {
-        const section = ext.method.section
-        const method = ext.method.method
-        console.log(`⏭️  [ANALYZE] Skipping system: ${section}.${method}`)
+        systemTransactions++
+        this.logger.trace('⏭️ Skipping system transaction', {
+          section: ext.method.section,
+          method: ext.method.method
+        })
         continue
       }
       
@@ -122,7 +136,6 @@ export class BlockAnalyzer {
       if (this.isBalanceTransfer(ext)) {
         totalBalanceTransfers++
         const method = ext.method.method
-        console.log(`💸 [ANALYZE] Found balances.${method} #${totalBalanceTransfers}`)
         
         // Extract sender address
         const signerAddress = this.extractSignerAddress(ext)
@@ -133,22 +146,41 @@ export class BlockAnalyzer {
           
           if (isOur) {
             ourBalanceTransfers++
-            console.log(`🎯 [ANALYZE] ✅ This is OUR transaction #${ourBalanceTransfers}! From: ${Utils.formatAddress(signerAddress)}`)
+            this.logger.info('🎯 Found OUR balance transfer', {
+              transactionNumber: ourBalanceTransfers,
+              senderAddress: Utils.formatAddress(signerAddress),
+              method
+            })
           } else {
-            console.log(`👤 [ANALYZE] External transaction from: ${Utils.formatAddress(signerAddress)}`)
+            this.logger.debug('👤 External balance transfer', {
+              senderAddress: Utils.formatAddress(signerAddress),
+              method
+            })
           }
         } else {
-          console.log(`⚠️  [ANALYZE] Could not extract signer address from balance transfer`)
+          this.logger.warn('⚠️ Could not extract signer address from balance transfer')
         }
       } else {
-        // Log other transaction types for debugging (but don't count them)
-        const section = ext.method?.section || 'unknown'
-        const method = ext.method?.method || 'unknown'
-        console.log(`🔍 [ANALYZE] Other transaction: ${section}.${method} (ignoring)`)
+        // Count other transaction types
+        otherTransactions++
+        this.logger.trace('🔍 Other transaction type', {
+          section: ext.method?.section || 'unknown',
+          method: ext.method?.method || 'unknown'
+        })
       }
     }
     
-    // Log results through reporter (if available)
+    // Log final analysis results
+    this.logger.info('📊 Block analysis completed', {
+      totalExtrinsics: extrinsics.length,
+      systemTransactions,
+      totalBalanceTransfers,
+      ourBalanceTransfers,
+      otherTransactions,
+      successRate: Utils.calculatePercentage(ourBalanceTransfers, totalBalanceTransfers)
+    })
+    
+    // Also send to reporter for backwards compatibility (will be removed later)
     if (this.reporter) {
       this.reporter.logBlockAnalysis(extrinsics.length, totalBalanceTransfers, ourBalanceTransfers)
     }
