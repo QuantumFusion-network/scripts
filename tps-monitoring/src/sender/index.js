@@ -5,6 +5,7 @@ import { NonceManager } from './nonce-manager.js'
 import { RateController } from './rate-controller.js'
 import { StatisticsCollector } from './statistics-collector.js'
 import { CLIInterface } from './cli-interface.js'
+import { senderLogger } from '../shared/logger.js'
 
 // Main coordinator for transaction sending
 export class TransactionSender {
@@ -16,6 +17,7 @@ export class TransactionSender {
     this.rateController = new RateController()
     this.statisticsCollector = new StatisticsCollector()
     this.cliInterface = new CLIInterface(this)
+    this.logger = senderLogger.child('TX-SENDER')
     
     this.amount = 1000000
     this.isInitialized = false
@@ -23,12 +25,10 @@ export class TransactionSender {
 
   // Initialize all components
   async initialize(nodeUrl, senderSeed, recipientSeed, amount, rate) {
-    console.log('🔧 [INIT] Starting TransactionSender initialization...')
-    console.log(`🔧 [INIT] Connecting to node: ${nodeUrl}`)
+    this.logger.info('Starting TransactionSender initialization', { nodeUrl })
     
     // Connect to API
     await this.apiConnector.connect(nodeUrl)
-    console.log('✅ [INIT] Node connection established')
     
     // Create components that need API
     this.transactionBuilder = new TransactionBuilder(this.apiConnector.getApi())
@@ -47,19 +47,15 @@ export class TransactionSender {
     this.amount = amount
     this.rateController.setRate(rate)
     
-    console.log(`💰 [INIT] Transfer amount: ${this.amount} (in smallest units)`)
-    console.log(`📊 [INIT] Sending frequency: ${this.rateController.getRate()} tx/sec`)
-    
     this.isInitialized = true
     
-    console.log('✅ [INIT] Initialization completed successfully!')
-    console.log('📋 [INIT] === CONNECTION PARAMETERS ===')
-    console.log(`👤 Sender: ${addresses.senderAddress}`)
-    console.log(`🎯 Recipient: ${addresses.recipientAddress}`)
-    console.log(`💰 Amount: ${this.amount}`)
-    console.log(`📊 Frequency: ${this.rateController.getRate()} tx/sec`)
-    console.log(`🔢 Nonce: ${this.nonceManager.getCurrentNonceValue()}`)
-    console.log('=========================================')
+    this.logger.info('TransactionSender initialization completed', {
+      senderAddress: addresses.senderAddress,
+      recipientAddress: addresses.recipientAddress,
+      amount: this.amount,
+      rate: this.rateController.getRate(),
+      startingNonce: this.nonceManager.getCurrentNonceValue()
+    })
   }
 
   // Send a single transaction
@@ -86,14 +82,23 @@ export class TransactionSender {
       const duration = Date.now() - startTime
       const txCount = this.statisticsCollector.getStats().sent
       
-      console.log(`🚀 [SEND] TX #${txCount}: nonce ${nonce} → ${hash.toString().slice(0, 10)}... (${duration}ms)`)
+      this.logger.info('Transaction sent successfully', {
+        txNumber: txCount,
+        nonce,
+        txHash: hash.toString().slice(0, 10) + '...',
+        duration
+      })
       
     } catch (error) {
       this.statisticsCollector.recordFailure()
       const duration = Date.now() - startTime
       const totalAttempts = this.statisticsCollector.getStats().total
       
-      console.error(`❌ [SEND] TX #${totalAttempts} FAILED: ${error.message} (${duration}ms)`)
+      this.logger.error('Transaction failed', {
+        txNumber: totalAttempts,
+        error: error.message,
+        duration
+      })
     }
   }
 
@@ -104,16 +109,16 @@ export class TransactionSender {
     }
     
     if (this.rateController.isActive()) {
-      console.log('⚠️ [START] Sending already started!')
+      this.logger.warn('Sending already started')
       return false
     }
     
-    console.log(`\n🚀 [START] Starting transaction sending...`)
-    console.log(`📊 [START] Frequency: ${this.rateController.getRate()} tx/sec`)
-    console.log(`⏱️ [START] Interval between transactions: ${this.rateController.getInterval().toFixed(0)}ms`)
-    console.log(`🎯 [START] Transaction type: balances.transfer`)
-    console.log(`💰 [START] Transfer amount: ${this.amount}`)
-    console.log('💡 [START] Available commands: "stop", "stats", number to change frequency')
+    this.logger.info('Starting transaction sending', {
+      rate: this.rateController.getRate(),
+      interval: this.rateController.getInterval(),
+      transactionType: 'balances.transfer',
+      amount: this.amount
+    })
     
     this.statisticsCollector.start()
     
@@ -122,8 +127,7 @@ export class TransactionSender {
       this.sendSingleTransaction()
     })
     
-    console.log(`✅ [START] Transaction sending started!`)
-    console.log(`📊 [START] Statistics will update in real time`)
+    this.logger.info('Transaction sending started successfully')
     
     return true
   }
@@ -143,7 +147,10 @@ export class TransactionSender {
       this.rateController.setRate(newRate)
       return true
     } catch (error) {
-      console.error(`❌ Rate change error: ${error.message}`)
+      this.logger.error('Rate change error', { 
+        newRate, 
+        error: error.message 
+      })
       return false
     }
   }
@@ -163,8 +170,7 @@ export class TransactionSender {
 
   // Start automatic mode
   async startAutoMode() {
-    console.log('🤖 Automatic mode')
-    console.log('💡 Press Ctrl+C to stop')
+    this.logger.info('Starting automatic mode')
     
     await this.start()
     
@@ -180,7 +186,7 @@ export class TransactionSender {
       clearInterval(statsInterval)
       this.stop()
       this.apiConnector.disconnect()
-      console.log('\n🛑 Received stop signal...')
+      this.logger.info('Received stop signal - shutting down')
       process.exit(0)
     }
     

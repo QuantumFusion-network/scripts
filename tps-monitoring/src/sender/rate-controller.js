@@ -1,3 +1,5 @@
+import { senderLogger } from '../shared/logger.js'
+
 // Controls the rate of transaction sending
 export class RateController {
   constructor() {
@@ -5,6 +7,7 @@ export class RateController {
     this.intervalId = null
     this.isRunning = false
     this.sendCallback = null
+    this.logger = senderLogger.child('RATE-CTRL')
   }
 
   // Set the sending rate
@@ -16,7 +19,11 @@ export class RateController {
     const oldRate = this.rate
     this.rate = rate
     
-    console.log(`📊 [RATE] Rate changed from ${oldRate} to ${this.rate} tx/sec`)
+    this.logger.info('Rate changed', { 
+      oldRate, 
+      newRate: this.rate,
+      isRunning: this.isRunning 
+    })
     
     // If currently running, restart with new rate
     if (this.isRunning && this.sendCallback) {
@@ -51,8 +58,10 @@ export class RateController {
     this.isRunning = true
     
     const interval = this.getInterval()
-    console.log(`🚀 [RATE] Starting with frequency: ${this.rate} tx/sec`)
-    console.log(`⏱️ [RATE] Interval between transactions: ${interval.toFixed(0)}ms`)
+    this.logger.info('Rate controller started', {
+      rate: this.rate,
+      intervalMs: interval
+    })
     
     this.intervalId = setInterval(() => {
       if (this.sendCallback) {
@@ -83,7 +92,7 @@ export class RateController {
   // Restart with current rate (useful when rate changes)
   restart() {
     if (this.isRunning && this.sendCallback) {
-      console.log('🔄 [RATE] Restarting with new rate...')
+      this.logger.info('Restarting with new rate', { newRate: this.rate })
       this.stop()
       this.start(this.sendCallback)
     }

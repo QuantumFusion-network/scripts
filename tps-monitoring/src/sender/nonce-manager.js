@@ -1,18 +1,24 @@
+import { senderLogger } from '../shared/logger.js'
+
 // Manages nonce for transactions
 export class NonceManager {
   constructor(api) {
     this.api = api
     this.currentNonce = null
     this.senderAddress = null
+    this.logger = senderLogger.child('NONCE-MGR')
   }
 
   // Initialize nonce for given sender address
   async initialize(senderAddress) {
     this.senderAddress = senderAddress
-    console.log('🔧 [NONCE] Getting current nonce...')
+    this.logger.info('Getting current nonce from chain', { senderAddress })
     
     this.currentNonce = await this.getCurrentNonce()
-    console.log(`🔢 [NONCE] Starting nonce: ${this.currentNonce}`)
+    this.logger.info('Nonce initialized', { 
+      senderAddress, 
+      startingNonce: this.currentNonce 
+    })
     
     return this.currentNonce
   }
@@ -44,9 +50,12 @@ export class NonceManager {
       throw new Error('Sender address not set')
     }
     
-    console.log('🔄 [NONCE] Resetting nonce from chain...')
+    this.logger.warn('Resetting nonce from chain', { senderAddress: this.senderAddress })
     this.currentNonce = await this.getCurrentNonce()
-    console.log(`🔢 [NONCE] Reset to: ${this.currentNonce}`)
+    this.logger.info('Nonce reset completed', { 
+      senderAddress: this.senderAddress, 
+      newNonce: this.currentNonce 
+    })
     return this.currentNonce
   }
 

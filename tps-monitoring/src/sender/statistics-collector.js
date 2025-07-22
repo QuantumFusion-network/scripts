@@ -1,3 +1,5 @@
+import { senderLogger } from '../shared/logger.js'
+
 // Collects and reports sending statistics
 export class StatisticsCollector {
   constructor() {
@@ -6,6 +8,7 @@ export class StatisticsCollector {
       failed: 0,
       startTime: null
     }
+    this.logger = senderLogger.child('STATS-COLLECTOR')
   }
 
   // Start collecting statistics
@@ -13,7 +16,9 @@ export class StatisticsCollector {
     this.stats.startTime = Date.now()
     this.stats.sent = 0
     this.stats.failed = 0
-    console.log(`⏰ [STATS] Start time: ${new Date().toISOString()}`)
+    this.logger.info('Statistics collection started', {
+      startTime: new Date().toISOString()
+    })
   }
 
   // Record successful transaction
@@ -61,30 +66,30 @@ export class StatisticsCollector {
   showStats(targetRate = null, currentNonce = null) {
     const stats = this.getStats()
     
-    console.log('\n📊 [STATS] === SENDING STATISTICS ===')
-    console.log(`⏱️  [STATS] Runtime: ${stats.runtime.toFixed(1)}s`)
-    console.log(`📤 [STATS] Sent successfully: ${stats.sent}`)
-    console.log(`❌ [STATS] Errors: ${stats.failed}`)
-    console.log(`📈 [STATS] Total attempts: ${stats.total}`)
-    console.log(`✅ [STATS] Success rate: ${stats.successRate.toFixed(1)}%`)
-    console.log(`📈 [STATS] Actual frequency: ${stats.actualRate.toFixed(2)} tx/sec`)
+    const logData = {
+      runtime: stats.runtime,
+      sent: stats.sent,
+      failed: stats.failed,
+      total: stats.total,
+      successRate: stats.successRate,
+      actualRate: stats.actualRate
+    }
     
     if (targetRate) {
-      console.log(`📊 [STATS] Target frequency: ${targetRate} tx/sec`)
-      
+      logData.targetRate = targetRate
       if (stats.runtime > 0) {
         const expectedTx = stats.runtime * targetRate
         const efficiency = this.calculateEfficiency(targetRate)
-        console.log(`🎯 [STATS] Expected to send: ${expectedTx.toFixed(0)}`)
-        console.log(`⚡ [STATS] Efficiency: ${efficiency.toFixed(1)}%`)
+        logData.expectedTx = expectedTx
+        logData.efficiency = efficiency
       }
     }
     
     if (currentNonce !== null) {
-      console.log(`🔢 [STATS] Current nonce: ${currentNonce}`)
+      logData.currentNonce = currentNonce
     }
     
-    console.log('==========================================\n')
+    this.logger.info('=== SENDING STATISTICS ===', logData)
   }
 
   // Reset statistics
@@ -94,6 +99,6 @@ export class StatisticsCollector {
       failed: 0,
       startTime: null
     }
-    console.log('🔄 [STATS] Statistics reset')
+    this.logger.info('Statistics reset')
   }
 } 

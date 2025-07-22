@@ -1,4 +1,5 @@
 import { Keyring } from '@polkadot/api'
+import { senderLogger } from '../shared/logger.js'
 
 // Manages keypairs and addresses for transaction sending
 export class KeyringManager {
@@ -6,26 +7,29 @@ export class KeyringManager {
     this.keyring = new Keyring({ type: 'sr25519' })
     this.senderKeyPair = null
     this.recipientAddress = null
+    this.logger = senderLogger.child('KEYRING-MGR')
   }
 
   // Initialize sender and recipient from seeds
   initialize(senderSeed, recipientSeed = null) {
-    console.log('🔧 [KEYRING] Creating keyring and key pairs...')
+    this.logger.info('Creating keyring and key pairs')
     
     // Create sender keypair
     this.senderKeyPair = this.keyring.addFromUri(senderSeed)
-    console.log(`✅ [KEYRING] Sender created: ${this.senderKeyPair.address}`)
+    this.logger.info('Sender keypair created', { 
+      senderAddress: this.senderKeyPair.address 
+    })
     
     // Define recipient address (if not specified - send to self)
     this.recipientAddress = recipientSeed 
       ? this.keyring.addFromUri(recipientSeed).address 
       : this.senderKeyPair.address
     
-    if (recipientSeed) {
-      console.log(`✅ [KEYRING] Recipient created: ${this.recipientAddress}`)
-    } else {
-      console.log(`✅ [KEYRING] Recipient = sender (self transfer): ${this.recipientAddress}`)
-    }
+    const isSelfTransfer = !recipientSeed
+    this.logger.info('Recipient configured', {
+      recipientAddress: this.recipientAddress,
+      isSelfTransfer
+    })
     
     return {
       senderAddress: this.senderKeyPair.address,
