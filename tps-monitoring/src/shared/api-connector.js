@@ -19,6 +19,14 @@ export class ApiConnector {
     return this.api
   }
 
+  // Get the API instance
+  getApi() {
+    if (!this.api) {
+      throw new Error('API not connected. Call connect() first.')
+    }
+    return this.api
+  }
+
   async getBlock(blockHash) {
     if (!this.api) {
       throw new Error('API not connected. Call connect() first.')
