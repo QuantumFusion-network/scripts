@@ -1,9 +1,9 @@
-import { ApiConnector } from './api-connector.js'
+import { ApiConnector } from '../shared/api-connector.js'
 import { BlockAnalyzer } from './block-analyzer.js'
 import { TPSCalculator } from './tps-calculator.js'
 import { StatisticsReporter } from './statistics-reporter.js'
 import { CSVExporter } from './csv-exporter.js'
-import { Utils } from './utils.js'
+import { Utils } from '../shared/utils.js'
 
 export class TPSMonitor {
   constructor() {

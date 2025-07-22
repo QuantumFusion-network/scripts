@@ -1,4 +1,4 @@
-import { Utils } from './utils.js'
+import { Utils } from '../shared/utils.js'
 
 export class TPSCalculator {
   constructor() {

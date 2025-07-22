@@ -1,4 +1,4 @@
-import { Utils } from './utils.js'
+import { Utils } from '../shared/utils.js'
 
 // Class for analyzing blocks and extrinsics (transactions) in blockchain
 // Main task: extract balance transfers and count them
