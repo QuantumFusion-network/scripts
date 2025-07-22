@@ -4,6 +4,7 @@ import { TPSCalculator } from './tps-calculator.js'
 import { StatisticsReporter } from './statistics-reporter.js'
 import { CSVExporter } from './csv-exporter.js'
 import { Utils } from '../shared/utils.js'
+import { monitorLogger } from '../shared/logger.js'
 
 export class TPSMonitor {
   constructor() {
@@ -12,6 +13,7 @@ export class TPSMonitor {
     this.tpsCalculator = new TPSCalculator()
     this.statsReporter = new StatisticsReporter()
     this.csvExporter = new CSVExporter()
+    this.logger = monitorLogger.child('MONITOR')
     
     // Связываем репортер с анализатором для логирования
     this.blockAnalyzer.setReporter(this.statsReporter)
@@ -68,7 +70,11 @@ export class TPSMonitor {
       
       // Log TPS calculations
       if (avgBlockTime <= 0) {
-        console.log(`⚠️  [BLOCK] No block time measurements, TPS = 0`)
+        this.logger.warn('⚠️ No block time measurements, TPS = 0', {
+          blockNumber,
+          totalUserTx,
+          ourTx
+        })
       }
       
       // Add data to CSV
@@ -87,16 +93,21 @@ export class TPSMonitor {
       
       // Show statistics every 10 blocks (reuse already calculated avgBlockTime for efficiency)
       if (this.totalBlocks % 10 === 0) {
-        console.log(`\n📊 [BLOCK] Every 10 blocks - showing statistics:`)
+        this.logger.info('📊 Every 10 blocks - showing statistics', {
+          totalBlocks: this.totalBlocks,
+          avgBlockTime
+        })
         this.showStats(avgBlockTime)  // Pass pre-calculated value to avoid duplicate computation
       }
       
     } catch (error) {
       const blockProcessTime = Date.now() - startTime
-      console.error(`❌ [BLOCK] ERROR processing block!`)
-      console.error(`   🆔 Hash: ${Utils.formatBlockHash(blockHash)}`)
-      console.error(`   📋 Error: ${error.message}`)
-      console.error(`   ⏱️  Time until error: ${blockProcessTime}ms`)
+      this.logger.error('❌ ERROR processing block', {
+        blockHash: Utils.formatBlockHash(blockHash),
+        error: error.message,
+        processTime: blockProcessTime,
+        stack: error.stack
+      })
     }
   }
 

@@ -1,8 +1,10 @@
 import fs from 'fs'
+import { monitorLogger } from '../shared/logger.js'
 
 export class CSVExporter {
   constructor() {
     this.csvData = []
+    this.logger = monitorLogger.child('CSV-EXPORT')
   }
 
   addRecord(blockNumber, totalTransactions, ourTransactions, instantTPS, ourTPS) {
@@ -26,7 +28,7 @@ export class CSVExporter {
 
   exportToCSV(filename = 'tps_stats.csv') {
     if (this.csvData.length === 0) {
-      console.log('⚠️  No data to export')
+      this.logger.warn('⚠️ No data to export', { filename })
       return false
     }
     
@@ -39,10 +41,18 @@ export class CSVExporter {
     
     try {
       fs.writeFileSync(filename, csvContent)
-      console.log(`📁 Data exported to ${filename}`)
+      this.logger.info('📁 Data exported successfully', {
+        filename,
+        recordCount: this.csvData.length,
+        fileSize: csvContent.length
+      })
       return true
     } catch (error) {
-      console.error('❌ Export error:', error.message)
+      this.logger.error('❌ Export error', {
+        filename,
+        error: error.message,
+        recordCount: this.csvData.length
+      })
       return false
     }
   }

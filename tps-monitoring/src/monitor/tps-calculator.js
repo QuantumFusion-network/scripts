@@ -1,8 +1,10 @@
 import { Utils } from '../shared/utils.js'
+import { monitorLogger } from '../shared/logger.js'
 
 export class TPSCalculator {
   constructor() {
     this.blockTimes = []
+    this.logger = monitorLogger.child('TPS-CALC')
   }
 
   addBlockTime(timestamp) {
@@ -11,7 +13,9 @@ export class TPSCalculator {
     // Keep only last 100 blocks for average calculation
     if (this.blockTimes.length > 100) {
       this.blockTimes.shift()
-      console.log(`🗑️  [TPS] Removed old timestamp (keeping last 100)`)
+      this.logger.debug('🗑️ Removed old timestamp (keeping last 100)', { 
+        bufferSize: this.blockTimes.length 
+      })
     }
   }
 
@@ -32,16 +36,22 @@ export class TPSCalculator {
     // TPS = transactions_in_block / block_time_in_seconds
     
     if (!measuredBlockTime || measuredBlockTime <= 0) {
-      console.log(`⚠️  [TPS] No valid block time measurements (${measuredBlockTime}ms)`)
-      console.log(`🔍 [TPS] Skipping TPS calculation - need real block time data`)
+      this.logger.warn('⚠️ No valid block time measurements - skipping TPS calculation', {
+        measuredBlockTime,
+        transactionCount
+      })
       return 0
     }
     
     const blockTimeInSeconds = measuredBlockTime / 1000  // convert to seconds
     const tps = Utils.safeDivision(transactionCount, blockTimeInSeconds)
     
-    console.log(`📊 [TPS] Universal calculation: ${transactionCount} tx / ${blockTimeInSeconds.toFixed(3)}s = ${tps.toFixed(2)} TPS`)
-    console.log(`⏱️  [TPS] Based on MEASURED block time: ${measuredBlockTime}ms`)
+    this.logger.info('📊 TPS calculation completed', {
+      transactionCount,
+      blockTimeSeconds: blockTimeInSeconds,
+      blockTimeMs: measuredBlockTime,
+      calculatedTPS: tps
+    })
     
     return tps
   }
