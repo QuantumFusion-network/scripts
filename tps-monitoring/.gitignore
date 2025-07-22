@@ -1,8 +1,8 @@
 node_modules/
 docs/
+src/csv-report/
 
 
 *.log
 .DS_Store
-tps_stats_*.csv
 package-lock.json
