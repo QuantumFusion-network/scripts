@@ -1,20 +1,22 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
+import { apiLogger } from './logger.js'
 
 export class ApiConnector {
   constructor() {
     this.api = null
     this.provider = null
+    this.logger = apiLogger
   }
 
   async connect(nodeUrl) {
-    console.log('🔧 [API] Starting connection...')
-    console.log(`🔧 [API] Connecting to node: ${nodeUrl}`)
+    this.logger.info('🔧 [API] Starting connection...')
+    this.logger.info(`🔧 [API] Connecting to node: ${nodeUrl}`)
     
     this.provider = new WsProvider(nodeUrl)
-    console.log('🔧 [API] Creating WsProvider...')
+    this.logger.info('🔧 [API] Creating WsProvider...')
     
     this.api = await ApiPromise.create({ provider: this.provider })
-    console.log('✅ [API] Node connection established')
+    this.logger.info('✅ [API] Node connection established')
     
     return this.api
   }
@@ -55,7 +57,7 @@ export class ApiConnector {
   disconnect() {
     if (this.provider) {
       this.provider.disconnect()
-      console.log('🔌 [API] Disconnected')
+      this.logger.info('🔌 [API] Disconnected')
     }
   }
 } 

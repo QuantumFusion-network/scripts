@@ -25,11 +25,20 @@ export class Utils {
   }
 
   // Логирование списка адресов в консоль
-  static logAddressList(addresses, prefix = 'ADDRESSES') {
-    console.log(`🎯 [${prefix}] ${addresses.length} total:`)
-    addresses.forEach((addr, i) => {
-      console.log(`   ${i + 1}. ${this.formatAddress(addr)}`)
-    })
+  static logAddressList(addresses, prefix = 'ADDRESSES', logger = null) {
+    const message = `🎯 [${prefix}] ${addresses.length} total:`
+    const addressList = addresses.map((addr, i) => `   ${i + 1}. ${this.formatAddress(addr)}`).join('\n')
+    
+    if (logger) {
+      logger.info(message)
+      logger.info(addressList)
+    } else {
+      // Fallback to console for backwards compatibility
+      console.log(message)
+      addresses.forEach((addr, i) => {
+        console.log(`   ${i + 1}. ${this.formatAddress(addr)}`)
+      })
+    }
   }
 
   // Форматирование хеша блока (короткий формат)
