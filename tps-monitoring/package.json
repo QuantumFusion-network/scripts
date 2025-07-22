@@ -7,12 +7,20 @@
   "scripts": {
     "sender": "node src/transaction_sender.js",
     "monitor": "node src/tps_monitor.js",
+    "dashboard": "node src/dashboard/index.js",
+    "stress:light": "node src/dashboard/index.js --scenario=light --senders=3 --rate=50",
+    "stress:medium": "node src/dashboard/index.js --scenario=medium --senders=5 --rate=100",
+    "stress:heavy": "node src/dashboard/index.js --scenario=heavy --senders=10 --rate=200",
+    "stress:extreme": "node src/dashboard/index.js --scenario=extreme --senders=15 --rate=500",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@polkadot/api": "^14.2.2",
     "@polkadot/util-crypto": "^13.1.1",
-    "commander": "^11.1.0"
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
+    "commander": "^11.1.0",
+    "winston": "^3.17.0"
   },
   "keywords": [
     "polkadot",
@@ -28,4 +36,4 @@
   "engines": {
     "node": ">=16.0.0"
   }
-} 
+}
