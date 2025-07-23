@@ -29,22 +29,22 @@ export class Logger {
         new winston.transports.File({
           filename: path.join(logsDir, 'errors.log'),
           level: 'error',
-          maxsize: 5242880, // 5MB
-          maxFiles: 5
+          maxsize: 20971520, // 20MB
+          maxFiles: 2
         }),
         
         // Все логи в общий файл
         new winston.transports.File({
           filename: path.join(logsDir, 'combined.log'),
-          maxsize: 5242880, // 5MB
-          maxFiles: 5
+          maxsize: 20971520, // 20MB
+          maxFiles: 2
         }),
 
         // Отдельный файл для каждого модуля
         new winston.transports.File({
           filename: path.join(logsDir, `${this.moduleName.toLowerCase()}.log`),
-          maxsize: 5242880, // 5MB
-          maxFiles: 3
+          maxsize: 20971520, // 20MB
+          maxFiles: 2
         })
       ]
     });
