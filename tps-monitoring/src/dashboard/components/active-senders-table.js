@@ -22,21 +22,29 @@ export class ActiveSendersTableComponent extends BaseComponent {
   createWidget(screen, layout) {
     this.widget = blessed.box({
       parent: screen,
-      top: '15%',
+      top: '20%',
       left: 0,
       width: '100%',
       height: '20%',
       border: { type: 'line', fg: 'green' },
-      title: ' Active Senders ',
+      label: ' Active Senders ',
       tags: true,
       content: this.formatTable(),
+      padding: {
+        top: 0,
+        bottom: 1,
+        left: 1,
+        right: 1
+      },
       style: {
         border: { fg: 'green' },
-        title: { fg: 'white', bold: true }
-      }
-    });
+        label: { fg: 'white', bold: true }
+      },
+      scrollable: true,
+      alwaysScroll: false
+    })
 
-    return this.widget;
+    return this.widget
   }
 
   /**

@@ -27,18 +27,29 @@ export class TPSMetricsComponent extends BaseComponent {
       top: 0,
       left: '25%',
       width: '25%',
-      height: '15%',
-      border: { type: 'line', fg: 'cyan' },
-      title: ' TPS Metrics ',
+      height: '20%',
+      border: { 
+        type: 'line', 
+        fg: 'cyan' 
+      },
+      label: ' TPS Metrics ',
       tags: true,
       content: this.formatContent(),
+      padding: {
+        top: 0,
+        bottom: 1,
+        left: 1,
+        right: 1
+      },
       style: {
         border: { fg: 'cyan' },
-        title: { fg: 'white', bold: true }
-      }
-    });
+        label: { fg: 'white', bold: true }
+      },
+      scrollable: false,
+      alwaysScroll: false
+    })
 
-    return this.widget;
+    return this.widget
   }
 
   /**

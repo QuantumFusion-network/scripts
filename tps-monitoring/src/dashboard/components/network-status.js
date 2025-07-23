@@ -27,18 +27,29 @@ export class NetworkStatusComponent extends BaseComponent {
       top: 0,
       left: 0,
       width: '25%',
-      height: '15%',
-      border: { type: 'line', fg: 'blue' },
-      title: ' Network Status ',
+      height: '20%',
+      border: { 
+        type: 'line', 
+        fg: 'blue'
+      },
+      label: ' Network Status ',
       tags: true,
       content: this.formatContent(),
+      padding: {
+        top: 0,
+        bottom: 1,
+        left: 1,
+        right: 1
+      },
       style: {
         border: { fg: 'blue' },
-        title: { fg: 'white', bold: true }
-      }
-    });
+        label: { fg: 'white', bold: true }
+      },
+      scrollable: false,
+      alwaysScroll: false
+    })
 
-    return this.widget;
+    return this.widget
   }
 
   /**

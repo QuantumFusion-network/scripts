@@ -138,8 +138,39 @@ class TUIDashboard {
   }
 
   async connectAndSubscribe(nodeUrl) {
+    // Перехватываем console.log во время API инициализации
+    const originalConsoleLog = console.log
+    const originalConsoleWarn = console.warn
+    const originalConsoleError = console.error
+    
+    // Временно перенаправляем console выходы в EventLog
+    console.log = (...args) => {
+      const message = args.join(' ')
+      if (message.includes('API/INIT') || message.includes('chainHead_') || message.includes('chainSpec_')) {
+        this.widgets.eventLog.addLog('DEBUG', message, 'API')
+      } else {
+        originalConsoleLog(...args)
+      }
+    }
+    
+    console.warn = (...args) => {
+      const message = args.join(' ')
+      this.widgets.eventLog.addLog('WARN', message, 'API')
+    }
+    
+    console.error = (...args) => {
+      const message = args.join(' ')  
+      this.widgets.eventLog.addLog('ERROR', message, 'API')
+    }
+    
     try {
       await this.apiConnector.connect(nodeUrl)
+      
+      // Восстанавливаем оригинальные console методы
+      console.log = originalConsoleLog
+      console.warn = originalConsoleWarn  
+      console.error = originalConsoleError
+      
       this.widgets.networkStatus.setConnectionStatus(true, nodeUrl)
       this.widgets.eventLog.addLog('INFO', `Connected to node: ${nodeUrl}`, 'Network')
       
@@ -156,6 +187,11 @@ class TUIDashboard {
         this.screen.render()
       })
     } catch (e) {
+      // Восстанавливаем console методы в случае ошибки
+      console.log = originalConsoleLog
+      console.warn = originalConsoleWarn
+      console.error = originalConsoleError
+      
       this.widgets.networkStatus.setConnectionStatus(false, nodeUrl)
       this.widgets.eventLog.addLog('ERROR', `Connection failed: ${e.message}`, 'Network')
       this.screen.render()

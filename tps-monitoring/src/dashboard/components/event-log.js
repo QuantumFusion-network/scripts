@@ -31,7 +31,7 @@ export class EventLogComponent extends BaseComponent {
       width: '100%',
       height: '35%',
       border: { type: 'line', fg: 'red' },
-      title: ' Event Log ',
+      label: ' Event Log ',
       tags: true,
       scrollable: true,
       scrollbar: {
@@ -43,9 +43,15 @@ export class EventLogComponent extends BaseComponent {
           bg: 'blue'
         }
       },
+      padding: {
+        top: 0,
+        bottom: 0,
+        left: 1,
+        right: 1
+      },
       style: {
         border: { fg: 'red' },
-        title: { fg: 'white', bold: true }
+        label: { fg: 'white', bold: true }
       }
     });
 

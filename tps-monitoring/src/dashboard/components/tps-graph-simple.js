@@ -24,21 +24,29 @@ export class TPSSimpleGraphComponent extends BaseComponent {
   createWidget(screen, layout) {
     this.widget = blessed.box({
       parent: screen,
-      top: '35%',
+      top: '40%',
       left: 0,
       width: '100%',
-      height: '30%',
+      height: '25%',
       border: { type: 'line', fg: 'yellow' },
-      title: ' Live TPS Graph (Simple) ',
+      label: ' Live TPS Graph (Simple) ',
       tags: true,
       content: this.formatGraph(),
+      padding: {
+        top: 0,
+        bottom: 1,
+        left: 1,
+        right: 1
+      },
       style: {
         border: { fg: 'yellow' },
-        title: { fg: 'white', bold: true }
-      }
-    });
+        label: { fg: 'white', bold: true }
+      },
+      scrollable: false,
+      alwaysScroll: false
+    })
 
-    return this.widget;
+    return this.widget
   }
 
   /**

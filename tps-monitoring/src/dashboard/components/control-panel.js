@@ -30,18 +30,29 @@ export class ControlPanelComponent extends BaseComponent {
       parent: screen,
       top: 0,
       left: '50%',
-      width: '25%',
-      height: '15%',
-      border: { type: 'line', fg: 'white' },
-      title: ' Control Panel ',
+      width: '50%',
+      height: '20%',
+      border: { 
+        type: 'line', 
+        fg: 'white' 
+      },
+      label: ' Control Panel ',
+      padding: {
+        top: 0,
+        bottom: 1,
+        left: 1,
+        right: 1
+      },
       style: {
         border: { fg: 'white' },
-        title: { fg: 'white', bold: true }
-      }
-    });
+        label: { fg: 'white', bold: true }
+      },
+      scrollable: false,
+      alwaysScroll: false
+    })
 
-    this.createButtons();
-    return this.widget;
+    this.createButtons()
+    return this.widget
   }
 
   /**

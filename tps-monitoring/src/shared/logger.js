@@ -148,7 +148,7 @@ export const createLogger = (moduleName, withConsole = true) => {
 export const monitorLogger = createLogger('MONITOR');
 export const senderLogger = createLogger('SENDER');
 export const dashboardLogger = createLogger('DASHBOARD');
-export const apiLogger = createLogger('API');
+export const apiLogger = createLogger('API', false); // Без console output для TUI
 
 // Экспорт по умолчанию
 export default Logger; 
