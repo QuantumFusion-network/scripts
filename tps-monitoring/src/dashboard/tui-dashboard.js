@@ -1,25 +1,33 @@
-import blessed from 'blessed';
-import contrib from 'blessed-contrib';
+import blessed from 'blessed'
+import contrib from 'blessed-contrib'
+import { NetworkStatusComponent } from './components/network-status.js'
+import { TPSMetricsComponent } from './components/tps-metrics.js'
+import { ControlPanelComponent } from './components/control-panel.js'
+import { ActiveSendersTableComponent } from './components/active-senders-table.js'
+import { TPSSimpleGraphComponent } from './components/tps-graph-simple.js'
+import { EventLogComponent } from './components/event-log.js'
+import { KeyboardHandlerComponent } from './components/keyboard-handler.js'
+import { MainLayout } from './layouts/main-layout.js'
+import { ApiConnector } from '../shared/api-connector.js'
 
 class TUIDashboard {
   constructor(options) {
-    this.processManager = options.processManager;
-    this.logAggregator = options.logAggregator;
-    this.reportGenerator = options.reportGenerator;
-    
-    this.screen = null;
-    this.widgets = {};
-    this.isRunning = false;
+    this.processManager = options.processManager
+    this.logAggregator = options.logAggregator
+    this.reportGenerator = options.reportGenerator
+    this.screen = null
+    this.layout = null
+    this.widgets = {}
+    this.isRunning = false
+    this.apiConnector = new ApiConnector()
+    this.lastBlockTime = null
+    this.updateInterval = null
   }
 
   async start(options) {
-    console.log('🎨 Starting TUI Dashboard...');
-    
-    // For Phase 1, just show a simple status
-    this.showSimpleStatus(options);
-    
-    // TODO: In Phase 5, implement full TUI interface
-    // this.initializeFullTUI(options);
+    console.log('🎨 Starting TUI Dashboard...')
+    // Phase 6: Full TUI implementation
+    await this.initializeFullTUI(options)
   }
 
   showSimpleStatus(options) {
@@ -40,71 +48,145 @@ class TUIDashboard {
     console.log('\n⌨️  Press Ctrl+C to exit\n');
   }
 
-  // TODO: Phase 5 - Full TUI Implementation
   async initializeFullTUI(options) {
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'QuantumFusion TPS Stress Test Dashboard'
-    });
+      title: 'QuantumFusion TPS Stress Test Dashboard',
+      terminal: 'xterm-256color',
+      fullUnicode: true,
+      dockBorders: true,
+      debug: false
+    })
 
-    // Create layout containers
-    this.createLayout();
-    
-    // Setup widgets
-    this.setupWidgets();
-    
-    // Setup event handlers
-    this.setupEventHandlers();
-    
-    // Start data updates
-    this.startUpdates();
-    
-    this.screen.render();
-    this.isRunning = true;
+    // Создаем layout
+    this.layout = new MainLayout()
+    this.layout.initialize(this.screen)
+
+    // Создаем компоненты
+    this.widgets.networkStatus = new NetworkStatusComponent()
+    this.widgets.tpsMetrics = new TPSMetricsComponent()
+    this.widgets.controlPanel = new ControlPanelComponent({
+      onStartTest: () => console.log('🚀 Start test'),
+      onStopTest: () => console.log('🛑 Stop test'),
+      onExportReport: () => console.log('📄 Export report')
+    })
+    this.widgets.activeSenders = new ActiveSendersTableComponent()
+    this.widgets.tpsGraph = new TPSSimpleGraphComponent()
+    this.widgets.eventLog = new EventLogComponent()
+    this.widgets.keyboardHandler = new KeyboardHandlerComponent()
+
+    // Создаем виджеты
+    this.widgets.networkStatus.createWidget(this.screen, this.layout)
+    this.widgets.tpsMetrics.createWidget(this.screen, this.layout)
+    this.widgets.controlPanel.createWidget(this.screen, this.layout)
+    this.widgets.activeSenders.createWidget(this.screen, this.layout)
+    this.widgets.tpsGraph.createWidget(this.screen, this.layout)
+    this.widgets.eventLog.createWidget(this.screen, this.layout)
+
+    // Инициализируем KeyboardHandler
+    this.widgets.keyboardHandler.initialize(this.screen, {
+      networkStatus: this.widgets.networkStatus,
+      tpsMetrics: this.widgets.tpsMetrics,
+      controlPanel: this.widgets.controlPanel,
+      activeSenders: this.widgets.activeSenders,
+      tpsGraph: this.widgets.tpsGraph,
+      eventLog: this.widgets.eventLog
+    })
+
+    // Подключаемся к ноде и подписываемся на новые блоки
+    await this.connectAndSubscribe(options.node || 'ws://localhost:9944')
+
+    // Настраиваем keyboard handlers для выхода
+    this.setupKeyboardHandlers()
+
+    // Запускаем periodic updates для всех компонентов
+    this.startPeriodicUpdates()
+
+    // Рендерим экран
+    this.screen.render()
+    this.isRunning = true
   }
 
-  createLayout() {
-    // TODO: Implement layout creation
-    // - Network status panel
-    // - TPS metrics panel  
-    // - Control panel
-    // - Active senders table
-    // - Live TPS graph
-    // - Event log panel
+  setupKeyboardHandlers() {
+    // Global keyboard handlers для выхода
+    this.screen.key(['escape', 'q', 'C-c'], (ch, key) => {
+      console.log('👋 Shutting down dashboard...')
+      this.stop()
+      process.exit(0)
+    })
+
+    // Help handler
+    this.screen.key(['h'], (ch, key) => {
+      console.log('🔑 Keyboard shortcuts: q=quit, h=help')
+    })
   }
 
-  setupWidgets() {
-    // TODO: Implement widget setup
-    // - blessed-contrib graphs
-    // - Tables for process status
-    // - Log viewers
-    // - Interactive controls
+  startPeriodicUpdates() {
+    // Запускаем обновления для компонентов (это держит event loop активным)
+    this.widgets.networkStatus.startUpdates(2000)
+    this.widgets.tpsMetrics.startUpdates(1000) 
+    this.widgets.eventLog.startUpdates(1500)
+    this.widgets.activeSenders.startUpdates(3000)
+    this.widgets.tpsGraph.startUpdates(5000)
+
+    // Общий update loop для рендеринга
+    this.updateInterval = setInterval(() => {
+      if (this.isRunning) {
+        this.screen.render()
+      }
+    }, 500)
   }
 
-  setupEventHandlers() {
-    // TODO: Implement event handlers
-    // - Keyboard shortcuts
-    // - Process manager events
-    // - Log aggregator events
-    // - Widget interactions
-  }
-
-  startUpdates() {
-    // TODO: Implement real-time updates
-    // - Process status updates
-    // - TPS metrics updates
-    // - Log updates
-    // - Graph data updates
+  async connectAndSubscribe(nodeUrl) {
+    try {
+      await this.apiConnector.connect(nodeUrl)
+      this.widgets.networkStatus.setConnectionStatus(true, nodeUrl)
+      this.widgets.eventLog.addLog('INFO', `Connected to node: ${nodeUrl}`, 'Network')
+      
+      await this.apiConnector.subscribeNewHeads(async (header) => {
+        const blockNumber = header.number.toNumber()
+        const now = Date.now()
+        let blockTime = 0
+        if (this.lastBlockTime) {
+          blockTime = now - this.lastBlockTime
+        }
+        this.lastBlockTime = now
+        this.widgets.networkStatus.setBlockInfo(blockNumber, blockTime)
+        this.widgets.eventLog.addLog('INFO', `Block #${blockNumber} processed`, 'Monitor')
+        this.screen.render()
+      })
+    } catch (e) {
+      this.widgets.networkStatus.setConnectionStatus(false, nodeUrl)
+      this.widgets.eventLog.addLog('ERROR', `Connection failed: ${e.message}`, 'Network')
+      this.screen.render()
+    }
   }
 
   async stop() {
-    console.log('🎨 Stopping TUI Dashboard...');
-    this.isRunning = false;
+    console.log('🎨 Stopping TUI Dashboard...')
+    this.isRunning = false
+    
+    // Остановить все обновления
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval)
+    }
+    
+    // Остановить компоненты
+    Object.values(this.widgets).forEach(widget => {
+      if (widget.destroy) {
+        widget.destroy()
+      }
+    })
+    
+    // Отключиться от API
+    if (this.apiConnector) {
+      this.apiConnector.disconnect()
+    }
     
     if (this.screen) {
-      this.screen.destroy();
+      this.screen.destroy()
     }
   }
 }
 
-export default TUIDashboard; 
+export default TUIDashboard 
