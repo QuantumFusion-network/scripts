@@ -295,7 +295,7 @@ export class KeyboardHandlerComponent extends BaseComponent {
     const component = this.components[componentName];
     if (component && component.widget) {
       component.widget.focus();
-      console.log(`🎯 Focused: ${componentName}`);
+      // Убрал console.log чтобы убрать "Focused" логи с экрана
     }
   }
 

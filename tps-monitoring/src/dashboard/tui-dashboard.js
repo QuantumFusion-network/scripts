@@ -56,7 +56,8 @@ class TUIDashboard {
       terminal: 'xterm-256color',
       fullUnicode: true,
       dockBorders: true,
-      debug: false
+      debug: false,   // ✅ Отключаем blessed debug (убираем "Focused" мусор)
+      log: false      // ✅ Отключаем blessed internal log
     })
 
     // Создаем layout
@@ -154,25 +155,30 @@ class TUIDashboard {
   }
 
   setupKeyboardHandlers() {
-    // Global keyboard handlers для выхода - ПРИОРИТЕТ!
-    this.screen.key(['escape', 'q', 'C-c'], (ch, key) => {
-      console.log('👋 Shutting down dashboard...')
+    // КРИТИЧЕСКИЙ приоритет для выхода - обрабатываем ДО всех компонентов
+    process.on('SIGINT', () => {
+      console.log('\n🛑 SIGINT received - force exit')
       this.stop()
       process.exit(0)
     })
 
-    // ДОПОЛНИТЕЛЬНАЯ защита - принудительный Ctrl+C
+    // Global keyboard handlers с максимальным приоритетом
     this.screen.key(['C-c'], (ch, key) => {
-      console.log('🛑 Force exit requested')
+      console.log('\n👋 Ctrl+C pressed - shutting down...')
       this.stop()
-      setTimeout(() => {
-        process.exit(1)
-      }, 1000) // Принудительный выход через 1 секунду
+      process.exit(0)
+    })
+
+    // Дублируем для надежности
+    this.screen.key(['escape', 'q'], (ch, key) => {
+      console.log('\n👋 Shutting down dashboard...')
+      this.stop()
+      process.exit(0)
     })
 
     // Help handler
     this.screen.key(['h'], (ch, key) => {
-      this.widgets.eventLog.addLog('INFO', 'Keyboard shortcuts: q=quit, h=help, Tab=navigate', 'Dashboard')
+      this.widgets.eventLog.addLog('INFO', 'Keyboard shortcuts: q=quit, h=help, Tab=navigate, Ctrl+C=force exit', 'Dashboard')
       this.screen.render()
     })
 
