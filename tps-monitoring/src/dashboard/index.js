@@ -5,6 +5,24 @@ import TUIDashboard from './tui-dashboard.js';
 import ProcessManager from './process-manager.js';
 import LogAggregator from './log-aggregator.js';
 import ReportGenerator from './report-generator.js';
+import fs from 'fs'
+import { fileURLToPath } from 'url'
+import path from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Переопределяем console.log и console.error для записи только в файл
+env: (() => {
+  const logPath = path.resolve(__dirname, '../../debug.log')
+  const logStream = fs.createWriteStream(logPath, { flags: 'a' })
+  console.log = function (...args) {
+    logStream.write('[LOG] ' + args.map(String).join(' ') + '\n')
+  }
+  console.error = function (...args) {
+    logStream.write('[ERROR] ' + args.map(String).join(' ') + '\n')
+  }
+})()
 
 class Dashboard {
   constructor() {
