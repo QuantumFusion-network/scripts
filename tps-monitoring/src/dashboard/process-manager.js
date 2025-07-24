@@ -164,18 +164,119 @@ class ProcessManager {
   }
 
   async stopAll() {
-    console.log('🛑 Stopping all processes...');
+    const processIds = Array.from(this.processes.keys())
+    let stopped = 0
     
-    const stopPromises = Array.from(this.processes.keys()).map(
-      processId => this.stopProcess(processId)
-    );
-    
-    await Promise.all(stopPromises);
-    
-    // Wait for all processes to exit
-    while (this.processes.size > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    for (const processId of processIds) {
+      try {
+        const success = await this.stopProcess(processId)
+        if (success) {
+          stopped++
+        }
+      } catch (error) {
+        // Silent error handling for clean UI
+      }
     }
+    
+    return stopped
+  }
+
+  async startTest(options = {}) {
+    // Light scenario configuration
+    const scenario = {
+      senders: 3,
+      targetTPS: 50,
+      duration: 300, // 5 minutes
+      accounts: ['Alice', 'Bob', 'Charlie'],
+      node: options.node || 'ws://localhost:9944'
+    }
+    
+    try {
+      // Start monitor first
+      await this.startMonitor({ 
+        node: scenario.node,
+        addresses: scenario.accounts.map(acc => `//${acc}`).join(',')
+      })
+      
+      // Start senders with delay
+      for (let i = 0; i < scenario.senders; i++) {
+        setTimeout(async () => {
+          await this.startSender({
+            account: scenario.accounts[i],
+            target: scenario.accounts[(i + 1) % scenario.accounts.length],
+            rate: Math.floor(scenario.targetTPS / scenario.senders),
+            node: scenario.node
+          })
+        }, i * 2000) // 2 second delays between senders
+      }
+      
+      return true
+      
+    } catch (error) {
+      return false
+    }
+  }
+
+  async startSender(options = {}) {
+    const { account, target, rate, node } = options
+    const processId = `sender-${account}`
+    
+    if (this.processes.has(processId)) {
+      throw new Error(`Sender ${account} already running`)
+    }
+
+    const args = [
+      path.join(__dirname, '../transaction_sender.js'),
+      '--node', node || 'ws://localhost:9944',
+      '--seed', `//${account}`,
+      '--recipient', `//${target}`, 
+      '--rate', rate || 17,
+      '--auto'
+    ]
+
+    const child = spawn('node', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      cwd: path.join(__dirname, '..')
+    })
+
+    this.processes.set(processId, {
+      process: child,
+      type: 'sender',
+      account,
+      target,
+      rate,
+      status: 'starting',
+      startTime: Date.now(),
+      stats: {
+        uptime: 0,
+        restarts: 0
+      }
+    })
+
+    this.setupProcessHandlers(processId, child)
+    return processId
+  }
+
+  async stopAll() {
+    console.log('🛑 Stopping all processes...')
+    
+    const processIds = Array.from(this.processes.keys())
+    let stopped = 0
+    
+    for (const processId of processIds) {
+      try {
+        const success = await this.stopProcess(processId)
+        if (success) {
+          stopped++
+          console.log(`✅ Stopped ${processId}`)
+        }
+      } catch (error) {
+        console.error(`❌ Failed to stop ${processId}:`, error.message)
+      }
+    }
+    
+    console.log(`🏁 Stopped ${stopped}/${processIds.length} processes`)
+    return stopped
   }
 
   getProcessInfo(processId) {

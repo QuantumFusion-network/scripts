@@ -79,9 +79,42 @@ class TUIDashboard {
       }
     })
     this.widgets.controlPanel = new ControlPanelComponent({
-      onStartTest: () => console.log('🚀 Start test'),
-      onStopTest: () => console.log('🛑 Stop test'),
-      onExportReport: () => console.log('📄 Export report')
+      onStartTest: async () => {
+        this.widgets.eventLog.addLog('INFO', 'Starting light stress test scenario...', 'Dashboard')
+        this.widgets.controlPanel.setTestRunning(true)
+        
+        try {
+          const success = await this.processManager.startTest({
+            node: 'ws://localhost:9944'
+          })
+          if (success) {
+            this.widgets.eventLog.addLog('INFO', 'Stress test started successfully', 'Dashboard')
+          } else {
+            this.widgets.controlPanel.setTestRunning(false)
+            this.widgets.eventLog.addLog('ERROR', 'Failed to start stress test', 'Dashboard')
+          }
+        } catch (error) {
+          this.widgets.controlPanel.setTestRunning(false)
+          this.widgets.eventLog.addLog('ERROR', `Test start error: ${error.message}`, 'Dashboard')
+        }
+        this.screen.render()
+      },
+      onStopTest: async () => {
+        this.widgets.eventLog.addLog('INFO', 'Stopping all test processes...', 'Dashboard')
+        
+        try {
+          const stopped = await this.processManager.stopAll()
+          this.widgets.controlPanel.setTestRunning(false)
+          this.widgets.eventLog.addLog('INFO', `Stopped ${stopped} processes`, 'Dashboard')
+        } catch (error) {
+          this.widgets.eventLog.addLog('ERROR', `Stop error: ${error.message}`, 'Dashboard')
+        }
+        this.screen.render()
+      },
+      onExportReport: () => {
+        console.log('📄 Export report (disabled)')
+        this.widgets.eventLog.addLog('INFO', 'Export report feature coming soon...', 'Dashboard')
+      }
     })
     this.widgets.activeSenders = new ActiveSendersTableComponent()
     this.widgets.tpsGraph = new TPSGraphComponent()
@@ -121,16 +154,33 @@ class TUIDashboard {
   }
 
   setupKeyboardHandlers() {
-    // Global keyboard handlers для выхода
+    // Global keyboard handlers для выхода - ПРИОРИТЕТ!
     this.screen.key(['escape', 'q', 'C-c'], (ch, key) => {
       console.log('👋 Shutting down dashboard...')
       this.stop()
       process.exit(0)
     })
 
+    // ДОПОЛНИТЕЛЬНАЯ защита - принудительный Ctrl+C
+    this.screen.key(['C-c'], (ch, key) => {
+      console.log('🛑 Force exit requested')
+      this.stop()
+      setTimeout(() => {
+        process.exit(1)
+      }, 1000) // Принудительный выход через 1 секунду
+    })
+
     // Help handler
     this.screen.key(['h'], (ch, key) => {
-      console.log('🔑 Keyboard shortcuts: q=quit, h=help')
+      this.widgets.eventLog.addLog('INFO', 'Keyboard shortcuts: q=quit, h=help, Tab=navigate', 'Dashboard')
+      this.screen.render()
+    })
+
+    // Global navigation - выход из focus кнопок
+    this.screen.key(['escape'], (ch, key) => {
+      // Снимаем focus с кнопок при Escape
+      this.screen.realloc()
+      this.screen.render()
     })
   }
 

@@ -13,7 +13,7 @@ export class ControlPanelComponent extends BaseComponent {
       isTestRunning: false,
       canStart: true,
       canStop: false,
-      canExport: false
+      canExport: false  // Export disabled per plan
     };
     
     this.buttons = {};
@@ -64,9 +64,13 @@ export class ControlPanelComponent extends BaseComponent {
       parent: this.widget,
       top: 1,
       left: 1,
-      width: 8,
-      height: 1,
-      content: ' START ',
+      width: 12,
+      height: 3,
+      content: '{center}Start Test{/center}\n{center}(Light){/center}',
+      tags: true,
+      focusable: true,
+      keys: true,
+      mouse: true,
       style: {
         bg: 'green',
         fg: 'white',
@@ -77,16 +81,20 @@ export class ControlPanelComponent extends BaseComponent {
         }
       },
       border: { type: 'line', fg: 'green' }
-    });
+    })
 
-    // Stop Test Button
+    // Stop All Button
     this.buttons.stop = blessed.button({
       parent: this.widget,
       top: 1,
-      left: 10,
-      width: 8,
-      height: 1,
-      content: ' STOP ',
+      left: 15,
+      width: 12,
+      height: 3,
+      content: '{center}Stop All{/center}\n{center}(Processes){/center}',
+      tags: true,
+      focusable: true,
+      keys: true,
+      mouse: true,
       style: {
         bg: 'red',
         fg: 'white',
@@ -97,30 +105,72 @@ export class ControlPanelComponent extends BaseComponent {
         }
       },
       border: { type: 'line', fg: 'red' }
-    });
+    })
 
-    // Export Report Button
+    // Export Report Button (Disabled)
     this.buttons.export = blessed.button({
       parent: this.widget,
-      top: 3,
-      left: 1,
-      width: 17,
-      height: 1,
-      content: ' EXPORT REPORT ',
+      top: 1,
+      left: 29,
+      width: 15,
+      height: 3,
+      content: '{center}Export Report{/center}\n{center}(Coming Soon){/center}',
+      tags: true,
+      focusable: false,  // Disabled - не может получить focus
+      keys: false,
+      mouse: false,
       style: {
-        bg: 'blue',
-        fg: 'white',
-        bold: true,
-        focus: {
-          bg: 'bright-blue',
-          fg: 'black'
-        }
+        bg: 'gray',
+        fg: 'black',
+        bold: false
       },
-      border: { type: 'line', fg: 'blue' }
-    });
+      border: { type: 'line', fg: 'gray' }
+    })
 
-    this.setupButtonEvents();
-    this.updateButtonStates();
+    this.setupButtonEvents()
+    this.setupKeyboardNavigation()
+    this.updateButtonStates()
+  }
+
+  /**
+   * Setup keyboard navigation between buttons
+   */
+  setupKeyboardNavigation() {
+    // Tab navigation between buttons
+    this.buttons.start.key(['tab'], () => {
+      this.buttons.stop.focus()
+    })
+
+    this.buttons.stop.key(['tab'], () => {
+      this.buttons.start.focus()  // Skip disabled export button
+    })
+
+    // Arrow key navigation
+    this.buttons.start.key(['right'], () => {
+      this.buttons.stop.focus()
+    })
+
+    this.buttons.stop.key(['left'], () => {
+      this.buttons.start.focus()
+    })
+
+    this.buttons.stop.key(['right'], () => {
+      this.buttons.start.focus()  // Cycle back
+    })
+
+    // Enter/Space to activate buttons
+    this.buttons.start.key(['enter', 'space'], () => {
+      this.buttons.start.press()
+    })
+
+    this.buttons.stop.key(['enter', 'space'], () => {
+      this.buttons.stop.press()
+    })
+
+    // Set initial focus on start button
+    setTimeout(() => {
+      this.buttons.start.focus()
+    }, 100)
   }
 
   /**
@@ -156,34 +206,33 @@ export class ControlPanelComponent extends BaseComponent {
     if (this.state.canStart && !this.state.isTestRunning) {
       this.buttons.start.style.bg = 'green';
       this.buttons.start.style.fg = 'white';
-      this.buttons.start.content = ' START ';
+      this.buttons.start.style.bold = true;
+      this.buttons.start.content = '{center}Start Test{/center}\n{center}(Light){/center}';
     } else {
       this.buttons.start.style.bg = 'gray';
       this.buttons.start.style.fg = 'black';
-      this.buttons.content = ' START ';
+      this.buttons.start.style.bold = false;
+      this.buttons.start.content = '{center}Start Test{/center}\n{center}(Running...){/center}';
     }
 
     // Stop button
     if (this.state.canStop && this.state.isTestRunning) {
       this.buttons.stop.style.bg = 'red';
       this.buttons.stop.style.fg = 'white';
-      this.buttons.stop.content = ' STOP ';
+      this.buttons.stop.style.bold = true;
+      this.buttons.stop.content = '{center}Stop All{/center}\n{center}(Active){/center}';
     } else {
       this.buttons.stop.style.bg = 'gray';
       this.buttons.stop.style.fg = 'black';
-      this.buttons.stop.content = ' STOP ';
+      this.buttons.stop.style.bold = false;
+      this.buttons.stop.content = '{center}Stop All{/center}\n{center}(No Processes){/center}';
     }
 
-    // Export button
-    if (this.state.canExport) {
-      this.buttons.export.style.bg = 'blue';
-      this.buttons.export.style.fg = 'white';
-      this.buttons.export.content = ' EXPORT REPORT ';
-    } else {
-      this.buttons.export.style.bg = 'gray';
-      this.buttons.export.style.fg = 'black';
-      this.buttons.export.content = ' EXPORT REPORT ';
-    }
+    // Export button (always disabled for now)
+    this.buttons.export.style.bg = 'gray';
+    this.buttons.export.style.fg = 'black';
+    this.buttons.export.style.bold = false;
+    this.buttons.export.content = '{center}Export Report{/center}\n{center}(Coming Soon){/center}';
 
     this.widget.screen.render();
   }
