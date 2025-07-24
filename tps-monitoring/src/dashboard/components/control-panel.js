@@ -116,7 +116,7 @@ export class ControlPanelComponent extends BaseComponent {
       height: 3,
       content: '{center}Export Report{/center}\n{center}(Coming Soon){/center}',
       tags: true,
-      focusable: false,  // Disabled - не может получить focus
+      focusable: false,  // Disabled - cannot receive focus
       keys: false,
       mouse: false,
       style: {

@@ -15,7 +15,7 @@ export class TPSMonitor {
     this.csvExporter = new CSVExporter()
     this.logger = monitorLogger.child('MONITOR')
     
-    // Связываем репортер с анализатором для логирования
+    // Link reporter with analyzer for logging
     this.blockAnalyzer.setReporter(this.statsReporter)
     
     this.startTime = Date.now()

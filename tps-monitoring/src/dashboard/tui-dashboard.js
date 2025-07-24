@@ -56,23 +56,23 @@ class TUIDashboard {
       terminal: 'xterm-256color',
       fullUnicode: true,
       dockBorders: true,
-      debug: false,   // ✅ Отключаем blessed debug (убираем "Focused" мусор)
-      log: false      // ✅ Отключаем blessed internal log
+      debug: false,   // ✅ Disable blessed debug (removes "Focused" noise)
+      log: false      // ✅ Disable blessed internal log
     })
 
-    // Создаем layout
+    // Create layout
     this.layout = new MainLayout()
     this.layout.initialize(this.screen)
 
-    // Создаем компоненты
+    // Create components
     this.widgets.networkStatus = new NetworkStatusComponent()
     this.widgets.tpsMetrics = new TPSMetricsComponent()
     
-    // Создаем LogTPSReader для реальных TPS данных
+    // Create LogTPSReader for real TPS data
     this.logTPSReader = new LogTPSReader({
       updateInterval: 1000,
       onDataUpdate: (tpsData) => {
-        // Обновляем TPSMetrics компонент реальными данными
+        // Update TPSMetrics component with real data
         this.widgets.tpsMetrics.setCurrentTPS(tpsData.currentTPS)
         this.widgets.tpsMetrics.setPeakTPS(tpsData.peakTPS) 
         this.widgets.tpsMetrics.setAverageTPS(tpsData.averageTPS)
@@ -122,7 +122,7 @@ class TUIDashboard {
     this.widgets.eventLog = new EventLogComponent()
     this.widgets.keyboardHandler = new KeyboardHandlerComponent()
 
-    // Создаем виджеты
+    // Create widgets
     this.widgets.networkStatus.createWidget(this.screen, this.layout)
     this.widgets.tpsMetrics.createWidget(this.screen, this.layout)
     this.widgets.controlPanel.createWidget(this.screen, this.layout)
@@ -130,7 +130,7 @@ class TUIDashboard {
     this.widgets.tpsGraph.createWidget(this.screen, this.layout)
     this.widgets.eventLog.createWidget(this.screen, this.layout)
 
-    // Инициализируем KeyboardHandler
+    // Initialize KeyboardHandler
     this.widgets.keyboardHandler.initialize(this.screen, {
       networkStatus: this.widgets.networkStatus,
       tpsMetrics: this.widgets.tpsMetrics,
@@ -140,36 +140,36 @@ class TUIDashboard {
       eventLog: this.widgets.eventLog
     })
 
-    // Подключаемся к ноде и подписываемся на новые блоки
+    // Connect to node and subscribe to new blocks
     await this.connectAndSubscribe(options.node || 'ws://localhost:9944')
 
-    // Настраиваем keyboard handlers для выхода
+    // Set up keyboard handlers for exit
     this.setupKeyboardHandlers()
 
-    // Запускаем periodic updates для всех компонентов
+    // Start periodic updates for all components
     this.startPeriodicUpdates()
 
-    // Рендерим экран
+    // Render screen
     this.screen.render()
     this.isRunning = true
   }
 
   setupKeyboardHandlers() {
-    // КРИТИЧЕСКИЙ приоритет для выхода - обрабатываем ДО всех компонентов
+    // CRITICAL priority for exit - handle BEFORE all components
     process.on('SIGINT', () => {
       console.log('\n🛑 SIGINT received - force exit')
       this.stop()
       process.exit(0)
     })
 
-    // Global keyboard handlers с максимальным приоритетом
+    // Global keyboard handlers with maximum priority
     this.screen.key(['C-c'], (ch, key) => {
       console.log('\n👋 Ctrl+C pressed - shutting down...')
       this.stop()
       process.exit(0)
     })
 
-    // Дублируем для надежности
+    // Duplicate for reliability
     this.screen.key(['escape', 'q'], (ch, key) => {
       console.log('\n👋 Shutting down dashboard...')
       this.stop()
@@ -182,28 +182,28 @@ class TUIDashboard {
       this.screen.render()
     })
 
-    // Global navigation - выход из focus кнопок
+    // Global navigation - exit button focus
     this.screen.key(['escape'], (ch, key) => {
-      // Снимаем focus с кнопок при Escape
+      // Remove focus from buttons on Escape
       this.screen.realloc()
       this.screen.render()
     })
   }
 
   startPeriodicUpdates() {
-    // Запускаем LogTPSReader для чтения реальных TPS данных
+    // Start LogTPSReader for reading real TPS data
     if (this.logTPSReader) {
       this.logTPSReader.start()
     }
     
-    // Запускаем обновления для компонентов (это держит event loop активным)
+    // Start updates for components (keeps event loop active)
     this.widgets.networkStatus.startUpdates(2000)
     this.widgets.tpsMetrics.startUpdates(1000) 
     this.widgets.eventLog.startUpdates(1500)
     this.widgets.activeSenders.startUpdates(3000)
     this.widgets.tpsGraph.startUpdates(5000)
 
-    // Общий update loop для рендеринга
+    // General update loop for rendering
     this.updateInterval = setInterval(() => {
       if (this.isRunning) {
         this.screen.render()
@@ -212,12 +212,12 @@ class TUIDashboard {
   }
 
   async connectAndSubscribe(nodeUrl) {
-    // Перехватываем console.log во время API инициализации
+    // Intercept console.log during API initialization
     const originalConsoleLog = console.log
     const originalConsoleWarn = console.warn
     const originalConsoleError = console.error
     
-    // Временно перенаправляем console выходы в EventLog
+    // Temporarily redirect console output to EventLog
     console.log = (...args) => {
       const message = args.join(' ')
       if (message.includes('API/INIT') || message.includes('chainHead_') || message.includes('chainSpec_')) {
@@ -240,7 +240,7 @@ class TUIDashboard {
     try {
       await this.apiConnector.connect(nodeUrl)
       
-      // Восстанавливаем оригинальные console методы
+      // Restore original console methods
       console.log = originalConsoleLog
       console.warn = originalConsoleWarn  
       console.error = originalConsoleError
@@ -261,7 +261,7 @@ class TUIDashboard {
         this.screen.render()
       })
     } catch (e) {
-      // Восстанавливаем console методы в случае ошибки
+      // Restore console methods in case of error
       console.log = originalConsoleLog
       console.warn = originalConsoleWarn
       console.error = originalConsoleError
@@ -276,24 +276,24 @@ class TUIDashboard {
     console.log('🎨 Stopping TUI Dashboard...')
     this.isRunning = false
     
-    // Остановить LogTPSReader
+    // Stop LogTPSReader
     if (this.logTPSReader) {
       this.logTPSReader.stop()
     }
     
-    // Остановить все обновления
+    // Stop all updates
     if (this.updateInterval) {
       clearInterval(this.updateInterval)
     }
     
-    // Остановить компоненты
+    // Stop components
     Object.values(this.widgets).forEach(widget => {
       if (widget.destroy) {
         widget.destroy()
       }
     })
     
-    // Отключиться от API
+    // Disconnect from API
     if (this.apiConnector) {
       this.apiConnector.disconnect()
     }
