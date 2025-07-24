@@ -1,112 +1,104 @@
-import blessed from 'blessed';
-import contrib from 'blessed-contrib';
-import { BaseComponent } from './base-component.js';
+import blessed from 'blessed'
+import { BaseComponent } from './base-component.js'
 
 /**
  * TPS Graph Component
- * Displays real-time TPS data using blessed-contrib line chart
+ * Displays TPS data as text-based ASCII visualization
  */
 export class TPSGraphComponent extends BaseComponent {
   constructor(options = {}) {
-    super({ name: 'TPSGraph', ...options });
+    super({ name: 'TPSGraph', ...options })
     
     this.data = {
       tpsHistory: [],
       timeHistory: [],
-      maxDataPoints: 60, // 10 minutes at 10-second intervals
+      maxDataPoints: 20, // Show last 20 data points
       maxTPS: 400,
       currentTPS: 0
-    };
-    
-    this.chart = null;
+    }
   }
 
   /**
-   * Create blessed-contrib line chart widget
+   * Create text-based graph widget
    */
   createWidget(screen, layout) {
-    try {
-      // Create line chart using blessed-contrib
-      this.chart = contrib.line({
-        parent: screen,
-        top: '35%',
-        left: 0,
-        width: '100%',
-        height: '30%',
-        border: { type: 'line', fg: 'yellow' },
-        title: ' Live TPS Graph ',
-        showLegend: true,
-        legend: { width: 10 },
-        xLabelPadding: 3,
-        xPadding: 5,
-        showNthLabel: 5,
-        maxY: this.data.maxTPS,
-        wholeNumbersOnly: false,
-        style: {
-          border: { fg: 'yellow' },
-          title: { fg: 'white', bold: true }
-        }
-      });
-    } catch (error) {
-      console.log('⚠️  TPS Graph: blessed-contrib not available, using fallback');
-      // Fallback to simple text display
-      this.chart = blessed.box({
-        parent: screen,
-        top: '35%',
-        left: 0,
-        width: '100%',
-        height: '30%',
-        border: { type: 'line', fg: 'yellow' },
-        title: ' Live TPS Graph (Fallback) ',
-        content: 'TPS Graph: blessed-contrib not available\nUse: npm install blessed-contrib',
-        style: {
-          border: { fg: 'yellow' },
-          title: { fg: 'white', bold: true }
-        }
-      });
-    }
+    this.widget = blessed.box({
+      parent: screen,
+      top: '40%',
+      left: 0,
+      width: '100%',
+      height: '25%',
+      border: { type: 'line', fg: 'yellow' },
+      label: ' Live TPS Graph ',
+      tags: true,
+      content: this.formatGraph(),
+      padding: {
+        top: 0,
+        bottom: 1,
+        left: 1,
+        right: 1
+      },
+      style: {
+        border: { fg: 'yellow' },
+        label: { fg: 'white', bold: true }
+      },
+      scrollable: false,
+      alwaysScroll: false
+    })
 
-    // Initialize with empty data
-    this.updateChart();
-    
-    return this.chart;
+    return this.widget
   }
 
   /**
-   * Update chart with current data
+   * Format ASCII graph
    */
-  updateChart() {
-    if (!this.chart || this.data.tpsHistory.length === 0) {
-      return;
+  formatGraph() {
+    if (this.data.tpsHistory.length === 0) {
+      return '{center}{yellow-fg}No TPS data available{/yellow-fg}{/center}'
     }
 
-    // Check if this is blessed-contrib chart or fallback
-    if (this.chart.setData) {
-      const x = this.data.timeHistory;
-      const y = this.data.tpsHistory;
-
-      this.chart.setData([{
-        title: 'TPS',
-        x: x,
-        y: y,
-        style: {
-          line: 'yellow',
-          text: 'yellow'
+    const { tpsHistory, timeHistory } = this.data
+    const maxTPS = Math.max(...tpsHistory, this.data.maxTPS)
+    const height = 8 // Graph height in characters
+    
+    let content = ''
+    
+    // Header with metrics
+    const current = this.data.currentTPS
+    const peak = this.getPeakTPS()
+    const average = this.getAverageTPS()
+    
+    content += `{center}Current: {green-fg}${current}{/} TPS | Peak: {yellow-fg}${peak}{/} TPS | Avg: {cyan-fg}${average}{/} TPS{/center}\n`
+    content += `${'─'.repeat(80)}\n`
+    
+    // ASCII graph
+    for (let i = height; i >= 0; i--) {
+      const threshold = (maxTPS / height) * i
+      const line = tpsHistory.map(tps => {
+        if (tps >= threshold) {
+          return '█'
+        } else if (tps >= threshold * 0.8) {
+          return '▄'
+        } else if (tps >= threshold * 0.6) {
+          return '▂'
+        } else {
+          return ' '
         }
-      }]);
-    } else {
-      // Fallback: update text content
-      const current = this.data.currentTPS;
-      const peak = this.getPeakTPS();
-      const average = this.getAverageTPS();
+      }).join('')
       
-      this.chart.setContent(
-        `Current TPS: ${current}\n` +
-        `Peak TPS: ${peak}\n` +
-        `Average TPS: ${average}\n` +
-        `Data points: ${this.data.tpsHistory.length}`
-      );
+      content += `${Math.round(threshold).toString().padStart(4)}┤ ${line}\n`
     }
+    
+    // X-axis labels
+    content += `    └${'─'.repeat(tpsHistory.length)}\n`
+    
+    // Time labels (show every 5th label)
+    const timeLabels = timeHistory.map((time, index) => 
+      index % 5 === 0 ? time.slice(-5) : '   '
+    ).join('')
+    content += `     ${timeLabels}\n`
+    
+    return content
   }
 
   /**
@@ -118,41 +110,32 @@ export class TPSGraphComponent extends BaseComponent {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
-    });
+    })
 
-    this.data.tpsHistory.push(tps);
-    this.data.timeHistory.push(time);
-    this.data.currentTPS = tps;
+    this.data.tpsHistory.push(tps)
+    this.data.timeHistory.push(time)
+    this.data.currentTPS = tps
 
     // Remove old data points if exceeding max
     if (this.data.tpsHistory.length > this.data.maxDataPoints) {
-      this.data.tpsHistory.shift();
-      this.data.timeHistory.shift();
+      this.data.tpsHistory.shift()
+      this.data.timeHistory.shift()
     }
 
-    // Auto-adjust max Y if needed
-    const maxTPS = Math.max(...this.data.tpsHistory);
-    if (maxTPS > this.data.maxTPS * 0.8) {
-      this.data.maxTPS = Math.ceil(maxTPS * 1.2);
-      if (this.chart) {
-        this.chart.options.maxY = this.data.maxTPS;
-      }
-    }
-
-    this.updateChart();
+    this.updateContent()
   }
 
   /**
    * Set test data for demonstration
    */
   setTestData() {
-    const now = new Date();
-    const testData = [];
+    const now = new Date()
+    const testData = []
     
-    // Generate 30 data points over the last 5 minutes
-    for (let i = 30; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 10000); // 10 second intervals
-      const tps = 200 + Math.sin(i * 0.3) * 100 + (Math.random() - 0.5) * 50;
+    // Generate 20 data points
+    for (let i = 20; i >= 0; i--) {
+      const time = new Date(now.getTime() - i * 5000) // 5 second intervals
+      const tps = 200 + Math.sin(i * 0.5) * 100 + (Math.random() - 0.5) * 50
       
       testData.push({
         time: time.toLocaleTimeString('en-US', { 
@@ -162,90 +145,65 @@ export class TPSGraphComponent extends BaseComponent {
           second: '2-digit'
         }),
         tps: Math.max(0, Math.round(tps))
-      });
+      })
     }
 
     // Clear existing data
-    this.data.tpsHistory = [];
-    this.data.timeHistory = [];
+    this.data.tpsHistory = []
+    this.data.timeHistory = []
 
     // Add test data
     testData.forEach(point => {
-      this.addDataPoint(point.tps, point.time);
-    });
+      this.addDataPoint(point.tps, point.time)
+    })
   }
 
   /**
    * Start real-time updates
    */
-  startUpdates(interval = 10000) { // 10 second updates
+  startUpdates(interval = 5000) { // 5 second updates
     this.updateInterval = setInterval(() => {
       // Generate realistic TPS data
-      const baseTPS = 250;
-      const variation = Math.sin(Date.now() * 0.001) * 100;
-      const noise = (Math.random() - 0.5) * 50;
-      const newTPS = Math.max(0, Math.round(baseTPS + variation + noise));
+      const baseTPS = 250
+      const variation = Math.sin(Date.now() * 0.001) * 100
+      const noise = (Math.random() - 0.5) * 50
+      const newTPS = Math.max(0, Math.round(baseTPS + variation + noise))
       
-      this.addDataPoint(newTPS);
-    }, interval);
+      this.addDataPoint(newTPS)
+    }, interval)
   }
 
   /**
    * Get current TPS value
    */
   getCurrentTPS() {
-    return this.data.currentTPS;
+    return this.data.currentTPS
   }
 
   /**
    * Get peak TPS from history
    */
   getPeakTPS() {
-    return this.data.tpsHistory.length > 0 ? Math.max(...this.data.tpsHistory) : 0;
+    return this.data.tpsHistory.length > 0 ? Math.max(...this.data.tpsHistory) : 0
   }
 
   /**
    * Get average TPS from history
    */
   getAverageTPS() {
-    if (this.data.tpsHistory.length === 0) return 0;
-    const sum = this.data.tpsHistory.reduce((a, b) => a + b, 0);
-    return Math.round(sum / this.data.tpsHistory.length);
+    if (this.data.tpsHistory.length === 0) return 0
+    const sum = this.data.tpsHistory.reduce((a, b) => a + b, 0)
+    return Math.round(sum / this.data.tpsHistory.length)
   }
 
   /**
-   * Clear all data
+   * Update widget content
    */
-  clearData() {
-    this.data.tpsHistory = [];
-    this.data.timeHistory = [];
-    this.updateChart();
-  }
-
-  /**
-   * Set custom data points
-   */
-  setData(tpsArray, timeArray) {
-    if (tpsArray.length !== timeArray.length) {
-      throw new Error('TPS and time arrays must have the same length');
+  updateContent() {
+    if (this.widget) {
+      this.widget.setContent(this.formatGraph())
+      this.widget.screen.render()
     }
-
-    this.data.tpsHistory = [...tpsArray];
-    this.data.timeHistory = [...timeArray];
-    this.updateChart();
-  }
-
-  /**
-   * Get chart data for export
-   */
-  getData() {
-    return {
-      tps: [...this.data.tpsHistory],
-      time: [...this.data.timeHistory],
-      current: this.data.currentTPS,
-      peak: this.getPeakTPS(),
-      average: this.getAverageTPS()
-    };
   }
 
   /**
@@ -253,11 +211,11 @@ export class TPSGraphComponent extends BaseComponent {
    */
   destroy() {
     if (this.updateInterval) {
-      clearInterval(this.updateInterval);
+      clearInterval(this.updateInterval)
     }
     
-    if (this.chart) {
-      this.chart.destroy();
+    if (this.widget) {
+      this.widget.destroy()
     }
   }
 } 

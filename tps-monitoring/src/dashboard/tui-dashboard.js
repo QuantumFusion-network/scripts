@@ -1,14 +1,14 @@
 import blessed from 'blessed'
-import contrib from 'blessed-contrib'
 import { NetworkStatusComponent } from './components/network-status.js'
 import { TPSMetricsComponent } from './components/tps-metrics.js'
 import { ControlPanelComponent } from './components/control-panel.js'
 import { ActiveSendersTableComponent } from './components/active-senders-table.js'
-import { TPSSimpleGraphComponent } from './components/tps-graph-simple.js'
+import { TPSGraphComponent } from './components/tps-graph.js'
 import { EventLogComponent } from './components/event-log.js'
 import { KeyboardHandlerComponent } from './components/keyboard-handler.js'
 import { MainLayout } from './layouts/main-layout.js'
 import { ApiConnector } from '../shared/api-connector.js'
+import { LogTPSReader } from './log-tps-reader.js'
 
 class TUIDashboard {
   constructor(options) {
@@ -22,6 +22,7 @@ class TUIDashboard {
     this.apiConnector = new ApiConnector()
     this.lastBlockTime = null
     this.updateInterval = null
+    this.logTPSReader = null
   }
 
   async start(options) {
@@ -65,13 +66,25 @@ class TUIDashboard {
     // Создаем компоненты
     this.widgets.networkStatus = new NetworkStatusComponent()
     this.widgets.tpsMetrics = new TPSMetricsComponent()
+    
+    // Создаем LogTPSReader для реальных TPS данных
+    this.logTPSReader = new LogTPSReader({
+      updateInterval: 1000,
+      onDataUpdate: (tpsData) => {
+        // Обновляем TPSMetrics компонент реальными данными
+        this.widgets.tpsMetrics.setCurrentTPS(tpsData.currentTPS)
+        this.widgets.tpsMetrics.setPeakTPS(tpsData.peakTPS) 
+        this.widgets.tpsMetrics.setAverageTPS(tpsData.averageTPS)
+        this.screen.render()
+      }
+    })
     this.widgets.controlPanel = new ControlPanelComponent({
       onStartTest: () => console.log('🚀 Start test'),
       onStopTest: () => console.log('🛑 Stop test'),
       onExportReport: () => console.log('📄 Export report')
     })
     this.widgets.activeSenders = new ActiveSendersTableComponent()
-    this.widgets.tpsGraph = new TPSSimpleGraphComponent()
+    this.widgets.tpsGraph = new TPSGraphComponent()
     this.widgets.eventLog = new EventLogComponent()
     this.widgets.keyboardHandler = new KeyboardHandlerComponent()
 
@@ -122,6 +135,11 @@ class TUIDashboard {
   }
 
   startPeriodicUpdates() {
+    // Запускаем LogTPSReader для чтения реальных TPS данных
+    if (this.logTPSReader) {
+      this.logTPSReader.start()
+    }
+    
     // Запускаем обновления для компонентов (это держит event loop активным)
     this.widgets.networkStatus.startUpdates(2000)
     this.widgets.tpsMetrics.startUpdates(1000) 
@@ -201,6 +219,11 @@ class TUIDashboard {
   async stop() {
     console.log('🎨 Stopping TUI Dashboard...')
     this.isRunning = false
+    
+    // Остановить LogTPSReader
+    if (this.logTPSReader) {
+      this.logTPSReader.stop()
+    }
     
     // Остановить все обновления
     if (this.updateInterval) {
