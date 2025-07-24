@@ -12,7 +12,7 @@ import path from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Переопределяем console.log и console.error для записи только в файл
+// Переопределяем console.log, console.error и console.warn для записи только в файл
 env: (() => {
   const logPath = path.resolve(__dirname, '../../debug.log')
   const logStream = fs.createWriteStream(logPath, { flags: 'a' })
@@ -21,6 +21,9 @@ env: (() => {
   }
   console.error = function (...args) {
     logStream.write('[ERROR] ' + args.map(String).join(' ') + '\n')
+  }
+  console.warn = function (...args) {
+    logStream.write('[WARN] ' + args.map(String).join(' ') + '\n')
   }
 })()
 
