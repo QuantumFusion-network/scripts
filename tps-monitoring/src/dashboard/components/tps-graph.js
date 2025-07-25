@@ -53,52 +53,8 @@ export class TPSGraphComponent extends BaseComponent {
    * Format ASCII graph
    */
   formatGraph() {
-    if (this.data.tpsHistory.length === 0) {
-      return '{center}{yellow-fg}No TPS data available{/yellow-fg}{/center}'
-    }
 
-    const { tpsHistory, timeHistory } = this.data
-    const maxTPS = Math.max(...tpsHistory, this.data.maxTPS)
-    const height = 8 // Graph height in characters
-    
-    let content = ''
-    
-    // Header with metrics
-    const current = this.data.currentTPS
-    const peak = this.getPeakTPS()
-    const average = this.getAverageTPS()
-    
-    content += `{center}Current: {green-fg}${current}{/} TPS | Peak: {yellow-fg}${peak}{/} TPS | Avg: {cyan-fg}${average}{/} TPS{/center}\n`
-    content += `${'─'.repeat(80)}\n`
-    
-    // ASCII graph
-    for (let i = height; i >= 0; i--) {
-      const threshold = (maxTPS / height) * i
-      const line = tpsHistory.map(tps => {
-        if (tps >= threshold) {
-          return '█'
-        } else if (tps >= threshold * 0.8) {
-          return '▄'
-        } else if (tps >= threshold * 0.6) {
-          return '▂'
-        } else {
-          return ' '
-        }
-      }).join('')
-      
-      content += `${Math.round(threshold).toString().padStart(4)}┤ ${line}\n`
-    }
-    
-    // X-axis labels
-    content += `    └${'─'.repeat(tpsHistory.length)}\n`
-    
-    // Time labels (show every 5th label)
-    const timeLabels = timeHistory.map((time, index) => 
-      index % 5 === 0 ? time.slice(-5) : '   '
-    ).join('')
-    content += `     ${timeLabels}\n`
-    
-    return content
+    return '{center}{yellow-fg}TPS graph temporarily disabled for debugging.{/yellow-fg}{/center}'
   }
 
   /**

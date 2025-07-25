@@ -203,12 +203,12 @@ class TUIDashboard {
     this.widgets.activeSenders.startUpdates(3000)
     this.widgets.tpsGraph.startUpdates(5000)
 
-    // General update loop for rendering
-    this.updateInterval = setInterval(() => {
-      if (this.isRunning) {
-        this.screen.render()
-      }
-    }, 500)
+    // УДАЛЕНО: общий update loop для render
+    // this.updateInterval = setInterval(() => {
+    //   if (this.isRunning) {
+    //     this.screen.render()
+    //   }
+    // }, 500)
   }
 
   async connectAndSubscribe(nodeUrl) {
