@@ -198,7 +198,7 @@ class TUIDashboard {
     
     // Start updates for components (keeps event loop active)
     this.widgets.networkStatus.startUpdates(2000)
-    this.widgets.tpsMetrics.startUpdates(1000) 
+    // this.widgets.tpsMetrics.startUpdates(1000) // REMOVED: conflict with LogTPSReader
     this.widgets.eventLog.startUpdates(1500)
     this.widgets.activeSenders.startUpdates(3000)
     this.widgets.tpsGraph.startUpdates(5000)
