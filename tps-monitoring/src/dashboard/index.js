@@ -12,7 +12,7 @@ import path from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Переопределяем console.log, console.error и console.warn для записи только в файл
+// Redefine console.log, console.error, and console.warn to write only to a file
 env: (() => {
   const logPath = path.resolve(__dirname, '../../debug.log')
   const logStream = fs.createWriteStream(logPath, { flags: 'a' })

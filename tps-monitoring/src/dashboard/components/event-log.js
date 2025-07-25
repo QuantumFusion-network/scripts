@@ -137,7 +137,7 @@ export class EventLogComponent extends BaseComponent {
   displayLogs() {
     if (!this.widget) return;
 
-    // Always clear widget before adding logs (жесткий лимит)
+    // Always clear widget before adding logs
     this.widget.setContent('');
 
     // Filter logs
