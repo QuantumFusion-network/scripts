@@ -18,6 +18,14 @@ export class EventLogComponent extends BaseComponent {
         source: null
       }
     };
+
+    // Memory usage logging every 5 seconds
+    this.memoryLogInterval = setInterval(() => {
+      const mem = process.memoryUsage();
+      const rss = (mem.rss / 1024 / 1024).toFixed(1);
+      const heap = (mem.heapUsed / 1024 / 1024).toFixed(1);
+      console.log(`[MEM] rss: ${rss} MB, heap: ${heap} MB`);
+    }, 5000);
   }
 
   /**
@@ -129,7 +137,7 @@ export class EventLogComponent extends BaseComponent {
   displayLogs() {
     if (!this.widget) return;
 
-    // Clear widget
+    // Always clear widget before adding logs (жесткий лимит)
     this.widget.setContent('');
 
     // Filter logs
@@ -296,6 +304,10 @@ export class EventLogComponent extends BaseComponent {
    * Clean up component
    */
   destroy() {
+    if (this.memoryLogInterval) {
+      clearInterval(this.memoryLogInterval);
+      this.memoryLogInterval = null;
+    }
     this.stopSimulation();
     
     if (this.updateInterval) {
