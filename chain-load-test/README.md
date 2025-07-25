@@ -1,20 +1,30 @@
-### Load tests contain scenarios designed to check load balancing and transactions per second (TPS) on the blockchain.
+# Chain Load Test
 
-## Envs:
+Load tests contain scenarios designed to check load balancing and transactions per second (TPS) on the blockchain.
 
-``` NODE_URL: Chain url ```
+## Environment Variables
 
-``` SENDER: sender private key ``` 
+```bash
+NODE_URL: Chain URL
+SENDER: Sender private key
+RECIPIENT: Recipient private key
+```
 
-``` RECEPIENT: recepient private key ```
+## Installation
 
+```bash
+npm install
+```
 
-## Commands:
+## Usage
 
-### Install deps
+```bash
+npm run test
+```
 
-```npm install```
+## Description
 
-### run tests
-
-```npm run test```
+This tool provides load testing scenarios for blockchain networks to measure:
+- Transaction throughput (TPS)
+- Load balancing performance
+- Network stability under stress
