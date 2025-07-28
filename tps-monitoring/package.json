@@ -1,34 +1,26 @@
 {
-  "name": "tps-real",
+  "name": "tps-simple",
   "version": "1.0.0",
-  "description": "Real TPS measurement tool for Polkadot/Substrate blockchains with QuantumFusion support",
+  "description": "Simple TPS measurement tool for Polkadot/Substrate blockchains",
   "type": "module",
-  "main": "src/transaction_sender.js",
+  "main": "src/simple-monitor.js",
   "scripts": {
     "sender": "node src/transaction_sender.js",
     "monitor": "node src/tps_monitor.js",
-    "dashboard": "node src/dashboard/index.js",
-    "stress:light": "node src/dashboard/index.js --scenario=light --senders=3 --rate=50",
-    "stress:medium": "node src/dashboard/index.js --scenario=medium --senders=5 --rate=100",
-    "stress:heavy": "node src/dashboard/index.js --scenario=heavy --senders=10 --rate=200",
-    "stress:extreme": "node src/dashboard/index.js --scenario=extreme --senders=15 --rate=500",
+    "simple": "node src/simple-monitor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@polkadot/api": "^14.2.2",
     "@polkadot/util-crypto": "^13.1.1",
-    "blessed": "^0.1.81",
-    "commander": "^11.1.0",
-    "winston": "^3.17.0"
+    "commander": "^11.1.0"
   },
   "keywords": [
     "polkadot",
     "substrate",
-    "quantumfusion",
     "tps",
     "blockchain",
-    "performance",
-    "measurement"
+    "simple"
   ],
   "author": "Your Name",
   "license": "MIT",
