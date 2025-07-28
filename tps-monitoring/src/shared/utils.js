@@ -50,4 +50,38 @@ export class Utils {
   static safeDivision(numerator, denominator) {
     return denominator > 0 ? numerator / denominator : 0
   }
+
+  // Find the latest log file in a series (for Winston rotated logs)
+  static async getLatestLogFile(baseName, logsDir = null) {
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    
+    // Default logs directory if not provided
+    if (!logsDir) {
+      const { fileURLToPath } = await import('url')
+      const __filename = fileURLToPath(import.meta.url)
+      const __dirname = path.dirname(__filename)
+      logsDir = path.join(__dirname, '..', 'logs')
+    }
+    
+    // Check files in order: baseName.log, baseName1.log, baseName2.log, etc.
+    let latestFile = null
+    let counter = 0
+    
+    while (true) {
+      const fileName = counter === 0 ? `${baseName}.log` : `${baseName}${counter}.log`
+      const filePath = path.join(logsDir, fileName)
+      
+      try {
+        await fs.access(filePath)
+        latestFile = filePath
+        counter++
+      } catch {
+        // File doesn't exist, stop searching
+        break
+      }
+    }
+    
+    return latestFile
+  }
 } 

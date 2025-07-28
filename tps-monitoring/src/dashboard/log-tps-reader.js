@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { Utils } from '../shared/utils.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -14,8 +15,8 @@ const __dirname = path.dirname(__filename)
 export class LogTPSReader {
   constructor(options = {}) {
     this.updateInterval = options.updateInterval || 1000 // 1 секунда
-    this.statsLogPath = path.join(__dirname, '../logs/monitor-stats-reporter.log')
-    this.tpsCalcLogPath = path.join(__dirname, '../logs/monitor-tps-calc.log')
+    this.statsLogPath = null // Will be set in initialize()
+    this.tpsCalcLogPath = null // Will be set in initialize()
     
     this.lastFilePosition = 0
     this.isRunning = false
@@ -39,10 +40,35 @@ export class LogTPSReader {
   }
 
   /**
+   * Initialize log file paths (must be called before start)
+   */
+  async initialize() {
+    // Find latest log files dynamically
+    this.statsLogPath = await Utils.getLatestLogFile('monitor-stats-reporter')
+    this.tpsCalcLogPath = await Utils.getLatestLogFile('monitor-tps-calc')
+    
+    if (!this.statsLogPath) {
+      console.warn('⚠️ No monitor-stats-reporter log files found')
+    } else {
+      console.log(`📊 Using stats log: ${path.basename(this.statsLogPath)}`)
+    }
+    
+    if (!this.tpsCalcLogPath) {
+      console.warn('⚠️ No monitor-tps-calc log files found')
+    } else {
+      console.log(`📊 Using TPS calc log: ${path.basename(this.tpsCalcLogPath)}`)
+    }
+  }
+
+  /**
    * Запуск чтения логов
    */
   async start() {
     console.log('📊 Starting LogTPSReader...')
+    
+    // Initialize log file paths first
+    await this.initialize()
+    
     this.isRunning = true
     
     // Найти последнюю позицию в файле при старте
@@ -74,11 +100,17 @@ export class LogTPSReader {
    * Инициализация позиции в файле (начинаем с конца)
    */
   async initializeFilePosition() {
+    if (!this.statsLogPath) {
+      console.warn('⚠️ No stats log file available, skipping position initialization')
+      this.lastFilePosition = 0
+      return
+    }
+    
     try {
       const stats = await fs.stat(this.statsLogPath)
       this.lastFilePosition = Math.max(0, stats.size - 10000) // Последние 10KB
     } catch (error) {
-      console.warn('⚠️  Stats log file not found, starting from beginning')
+      console.warn('⚠️ Stats log file not found, starting from beginning')
       this.lastFilePosition = 0
     }
   }
@@ -88,6 +120,11 @@ export class LogTPSReader {
    */
   async readLatestTPS() {
     if (!this.isRunning) return
+    
+    if (!this.statsLogPath) {
+      // No log file available, skip reading
+      return
+    }
 
     try {
       // Читаем новые данные из monitor-stats-reporter.log
