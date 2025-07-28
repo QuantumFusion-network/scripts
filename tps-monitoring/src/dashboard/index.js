@@ -8,24 +8,77 @@ import ReportGenerator from './report-generator.js';
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import { dashboardLogger } from '../shared/logger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Redefine console.log, console.error, and console.warn to write only to a file
-env: (() => {
-  const logPath = path.resolve(__dirname, '../../debug.log')
-  const logStream = fs.createWriteStream(logPath, { flags: 'a' })
-  console.log = function (...args) {
-    logStream.write('[LOG] ' + args.map(String).join(' ') + '\n')
+// Custom log rotation for debug logs
+class DebugLogger {
+  constructor() {
+    this.logsDir = path.resolve(__dirname, '../logs')
+    this.logPath = path.join(this.logsDir, 'debug.log')
+    this.maxFileSize = 10 * 1024 * 1024 // 10MB
+    this.maxFiles = 3
+    
+    // Ensure logs directory exists
+    if (!fs.existsSync(this.logsDir)) {
+      fs.mkdirSync(this.logsDir, { recursive: true })
+    }
   }
-  console.error = function (...args) {
-    logStream.write('[ERROR] ' + args.map(String).join(' ') + '\n')
+
+  rotateIfNeeded() {
+    try {
+      if (!fs.existsSync(this.logPath)) return
+      
+      const stats = fs.statSync(this.logPath)
+      if (stats.size < this.maxFileSize) return
+
+      // Rotate files: debug2.log -> debug3.log, debug1.log -> debug2.log, debug.log -> debug1.log
+      for (let i = this.maxFiles - 1; i >= 1; i--) {
+        const oldFile = path.join(this.logsDir, `debug${i}.log`)
+        const newFile = path.join(this.logsDir, `debug${i + 1}.log`)
+        
+        if (fs.existsSync(oldFile)) {
+          if (i === this.maxFiles - 1) {
+            fs.unlinkSync(oldFile) // Delete oldest file
+          } else {
+            fs.renameSync(oldFile, newFile)
+          }
+        }
+      }
+      
+      // Move current log to debug1.log
+      const debug1Path = path.join(this.logsDir, 'debug1.log')
+      fs.renameSync(this.logPath, debug1Path)
+      
+    } catch (error) {
+      // Silent error handling for rotation
+    }
   }
-  console.warn = function (...args) {
-    logStream.write('[WARN] ' + args.map(String).join(' ') + '\n')
+
+  write(level, ...args) {
+    this.rotateIfNeeded()
+    
+    const timestamp = new Date().toISOString()
+    const message = `[${timestamp}] [${level}] ${args.map(String).join(' ')}\n`
+    
+    fs.appendFileSync(this.logPath, message)
   }
-})()
+}
+
+const debugLogger = new DebugLogger()
+
+// Redefine console methods to use custom debug logger
+console.log = function (...args) {
+  debugLogger.write('LOG', ...args)
+}
+console.error = function (...args) {
+  debugLogger.write('ERROR', ...args)
+}
+console.warn = function (...args) {
+  debugLogger.write('WARN', ...args)
+}
 
 class Dashboard {
   constructor() {

@@ -72,10 +72,18 @@ class TUIDashboard {
     this.logTPSReader = new LogTPSReader({
       updateInterval: 1000,
       onDataUpdate: (tpsData) => {
+        console.log('🔍 TUIDashboard: onDataUpdate called with:', {
+          currentTPS: tpsData.currentTPS,
+          peakTPS: tpsData.peakTPS,
+          averageTPS: tpsData.averageTPS
+        })
+        
         // Update TPSMetrics component with real data
         this.widgets.tpsMetrics.setCurrentTPS(tpsData.currentTPS)
         this.widgets.tpsMetrics.setPeakTPS(tpsData.peakTPS) 
         this.widgets.tpsMetrics.setAverageTPS(tpsData.averageTPS)
+        
+        console.log('🔍 TUIDashboard: TPSMetrics updated, rendering screen...')
         this.screen.render()
       }
     })

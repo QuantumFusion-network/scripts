@@ -43,9 +43,16 @@ export class LogTPSReader {
    * Initialize log file paths (must be called before start)
    */
   async initialize() {
+    console.log('🔍 LogTPSReader: Starting initialization...')
+    
     // Find latest log files dynamically
     this.statsLogPath = await Utils.getLatestLogFile('monitor-stats-reporter')
     this.tpsCalcLogPath = await Utils.getLatestLogFile('monitor-tps-calc')
+    
+    console.log('🔍 LogTPSReader: Found files:', {
+      statsLogPath: this.statsLogPath,
+      tpsCalcLogPath: this.tpsCalcLogPath
+    })
     
     if (!this.statsLogPath) {
       console.warn('⚠️ No monitor-stats-reporter log files found')
@@ -108,7 +115,13 @@ export class LogTPSReader {
     
     try {
       const stats = await fs.stat(this.statsLogPath)
-      this.lastFilePosition = Math.max(0, stats.size - 10000) // Последние 10KB
+      console.log('🔍 LogTPSReader: File size:', stats.size, 'bytes')
+      
+      // При первом запуске читаем весь файл, чтобы получить актуальные данные
+      // Вместо чтения только последних 10KB
+      this.lastFilePosition = 0
+      console.log('🔍 LogTPSReader: Starting from beginning of file (position 0)')
+      
     } catch (error) {
       console.warn('⚠️ Stats log file not found, starting from beginning')
       this.lastFilePosition = 0
@@ -127,10 +140,12 @@ export class LogTPSReader {
     }
 
     try {
+      console.log('📊 LogTPSReader: Reading from stats log:', this.statsLogPath)
       // Читаем новые данные из monitor-stats-reporter.log
       const newStatsData = await this.readNewLogEntries(this.statsLogPath)
       
       if (newStatsData.length > 0) {
+        console.log('📊 LogTPSReader: Found', newStatsData.length, 'new entries in stats log.')
         // Обрабатываем каждую новую запись
         for (const entry of newStatsData) {
           this.processStatsEntry(entry)
@@ -138,6 +153,8 @@ export class LogTPSReader {
         
         // Уведомляем компоненты об обновлении
         this.onDataUpdate(this.tpsData)
+      } else {
+        console.log('📊 LogTPSReader: No new entries found in stats log.')
       }
     } catch (error) {
       console.error('❌ Error reading TPS data:', error.message)
@@ -149,10 +166,13 @@ export class LogTPSReader {
    */
   async readNewLogEntries(logPath) {
     try {
+      console.log('🔍 LogTPSReader: Reading from logPath:', logPath)
       const stats = await fs.stat(logPath)
+      console.log('🔍 LogTPSReader: File stats:', { size: stats.size, lastPosition: this.lastFilePosition })
       
       // Если файл не изменился, возвращаем пустой массив
       if (stats.size <= this.lastFilePosition) {
+        console.log('🔍 LogTPSReader: File unchanged, no new data')
         return []
       }
       
@@ -170,6 +190,8 @@ export class LogTPSReader {
       const newContent = buffer.toString('utf8')
       const lines = newContent.trim().split('\n').filter(line => line.trim())
       
+      console.log('🔍 LogTPSReader: Parsed', lines.length, 'lines from file')
+      
       const entries = []
       for (const line of lines) {
         try {
@@ -177,9 +199,11 @@ export class LogTPSReader {
           entries.push(entry)
         } catch (parseError) {
           // Игнорируем неполные строки (файл может быть записан частично)
+          console.log('🔍 LogTPSReader: Parse error on line:', line.substring(0, 50) + '...')
         }
       }
       
+      console.log('🔍 LogTPSReader: Successfully parsed', entries.length, 'entries')
       return entries
     } catch (error) {
       if (error.code !== 'ENOENT') {
@@ -193,13 +217,24 @@ export class LogTPSReader {
    * Обработка записи из monitor-stats-reporter.log
    */
   processStatsEntry(entry) {
+    console.log('🔍 LogTPSReader: Processing entry:', {
+      message: entry.message,
+      instantTPS: entry.instantTPS,
+      ourTPS: entry.ourTPS,
+      avgOurTPS: entry.avgOurTPS
+    })
+    
     // Ищем записи с TPS данными
     if (entry.message && entry.message.includes('Block processing completed')) {
       // Запись типа: "⚡ Block processing completed"
+      console.log('🔍 LogTPSReader: Found block processing entry')
       this.updateTPSFromBlockProcessing(entry)
     } else if (entry.message && entry.message.includes('TPS MONITORING STATISTICS')) {
       // Запись типа: "📊 === TPS MONITORING STATISTICS ==="
+      console.log('🔍 LogTPSReader: Found TPS statistics entry')
       this.updateTPSFromStatistics(entry)
+    } else {
+      console.log('🔍 LogTPSReader: Entry not processed (no TPS data)')
     }
   }
 
@@ -207,6 +242,13 @@ export class LogTPSReader {
    * Обновление TPS из записи обработки блока
    */
   updateTPSFromBlockProcessing(entry) {
+    console.log('🔍 LogTPSReader: Block processing data:', {
+      instantTPS: entry.instantTPS,
+      ourTPS: entry.ourTPS,
+      blockNumber: entry.blockNumber,
+      avgBlockTime: entry.avgBlockTime
+    })
+    
     if (entry.instantTPS !== undefined) {
       this.tpsData.currentTPS = entry.instantTPS || 0
       this.tpsData.instantTPS = entry.instantTPS || 0
@@ -230,6 +272,12 @@ export class LogTPSReader {
     }
     
     this.tpsData.lastUpdate = new Date()
+    
+    console.log('🔍 LogTPSReader: Updated TPS data:', {
+      currentTPS: this.tpsData.currentTPS,
+      peakTPS: this.tpsData.peakTPS,
+      averageTPS: this.tpsData.averageTPS
+    })
   }
 
   /**
