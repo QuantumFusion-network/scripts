@@ -1,7 +1,6 @@
 node_modules/
-src/csv-report/
+
 
 
 *.log
 .DS_Store
-package-lock.json

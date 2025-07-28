@@ -5,8 +5,7 @@
   "type": "module",
   "main": "src/simple-monitor.js",
   "scripts": {
-    "sender": "node src/transaction_sender.js",
-    "monitor": "node src/tps_monitor.js",
+    "start": "node src/simple-monitor.js",
     "simple": "node src/simple-monitor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
