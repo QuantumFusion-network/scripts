@@ -1,23 +1,23 @@
 # 🚀 Simple TPS Monitor: Substrate TPS Measurement Tool
 
-Простой инструмент для измерения реального TPS (транзакций в секунду) в Polkadot/Substrate блокчейнах.
+A simple tool for measuring real TPS (transactions per second) in Polkadot/Substrate blockchains.
 
 ## 🎯 Features
 
-- ✅ **Правильное измерение TPS** - анализирует блоки, а не скорость отправки
-- ✅ **Реальные балансовые транзакции** - использует transferKeepAlive
-- ✅ **Автоматическое управление nonce** - корректная обработка множественных транзакций
-- ✅ **Непрерывный мониторинг** - отслеживает блоки в реальном времени
-- ✅ **Настраиваемая нагрузка** - параметр --tps для контроля частоты отправки
-- ✅ **Режим только мониторинга** - --tps 0 для анализа без генерации нагрузки
-- ✅ **Простой CLI интерфейс** - одна команда для запуска
-- ✅ **Graceful shutdown** - корректное завершение по Ctrl+C
+- ✅ **Accurate TPS measurement** - analyzes blocks, not sending speed
+- ✅ **Real balance transactions** - uses transferKeepAlive
+- ✅ **Automatic nonce management** - proper handling of multiple transactions
+- ✅ **Continuous monitoring** - tracks blocks in real-time
+- ✅ **Configurable load** - --tps parameter for controlling sending frequency
+- ✅ **Monitor-only mode** - --tps 0 for analysis without load generation
+- ✅ **Simple CLI interface** - one command to run
+- ✅ **Graceful shutdown** - proper termination with Ctrl+C
 
 ## 📦 Installation
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/your-username/tps-monitoring.git
 cd tps-monitoring
 
 # Install dependencies
@@ -27,162 +27,210 @@ npm install
 ## 🔧 Requirements
 
 - Node.js >= 16.0.0
-- Доступ к Polkadot/Substrate ноде через WebSocket
-- Аккаунт Alice с балансом для тестирования
+- Access to Polkadot/Substrate node via WebSocket
+- Alice account with balance for testing
 
 ## 🚀 Usage
 
-### Основная команда
+### Basic Command
 
 ```bash
-# Запуск с генерацией нагрузки (10 TPS по умолчанию)
+# Run with load generation (10 TPS by default)
 node src/simple-monitor.js
 
-# Подключение к кастомной ноде
+# Connect to custom node
 node src/simple-monitor.js --node ws://your-node:9944
 
-# Настройка целевого TPS
+# Set target TPS
 node src/simple-monitor.js --tps 50
 
-# Только мониторинг без генерации нагрузки
+# Monitor only without load generation
 node src/simple-monitor.js --tps 0
 
-# Полный пример
+# Full example
 node src/simple-monitor.js \
   --node ws://localhost:9944 \
   --tps 25
 ```
 
-### Параметры CLI
+### CLI Parameters
 
-- `-n, --node <url>` - URL ноды WebSocket (по умолчанию: ws://localhost:9944)
-- `-t, --tps <number>` - Целевой TPS для генерации (0 = только мониторинг, по умолчанию: 10)
+- `-n, --node <url>` - Node WebSocket URL (default: ws://localhost:9944)
+- `-t, --tps <number>` - Target TPS to generate (0 = monitor only, default: 10)
 
-### NPM скрипты
+### NPM Scripts
 
 ```bash
-# Запуск с дефолтными параметрами
+# Run with default parameters
 npm start
-
-# Альтернативный запуск
-npm run simple
 ```
 
-## 📊 Как это работает
+## 📊 How it works
 
-### 1. Подключение к блокчейну
-- Инициализирует криптографию
-- Подключается к ноде через WebSocket
-- Создает аккаунт Alice для тестирования
+### 1. Blockchain Connection
+- Initializes cryptography
+- Connects to node via WebSocket
+- Creates Alice account for testing
 
-### 2. Генерация нагрузки (если --tps > 0)
-- Отправляет транзакции Alice → Alice с заданной частотой
-- Использует `transferKeepAlive` для безопасных переводов
-- Автоматически управляет nonce для каждой транзакции
-- Показывает прогресс каждые 10 транзакций
+### 2. Load Generation (if --tps > 0)
+- Sends Alice → Alice transactions at specified frequency
+- Uses `transferKeepAlive` for safe transfers
+- Automatically manages nonce for each transaction
+- Shows progress every 10 transactions
 
-### 3. Мониторинг TPS
-- Подписывается на новые блоки
-- Подсчитывает транзакции в каждом блоке
-- Вычисляет средний TPS по последним 10 блокам
-- Показывает статистику в реальном времени
+### 3. TPS Monitoring
+- Subscribes to new blocks
+- Counts transactions in each block
+- Calculates average TPS over last 10 blocks
+- Shows statistics in real-time
 
-### 4. Вывод статистики
+### 4. Statistics Output
 ```
 Block #1234: 8 txs, 13.3 TPS (45s runtime)
 ```
-Где:
-- `#1234` - номер блока
-- `8 txs` - количество транзакций в блоке
-- `13.3 TPS` - средний TPS по последним 10 блокам
-- `45s runtime` - время работы программы
+Where:
+- `#1234` - block number
+- `8 txs` - number of transactions in block
+- `13.3 TPS` - average TPS over last 10 blocks
+- `45s runtime` - program runtime
 
-## 🏃‍♂️ Примеры использования
+## 🏃‍♂️ Usage Examples
 
-### Тестирование производительности ноды
+### Node Performance Testing
 
 ```bash
-# Начать с низкой нагрузки
+# Start with low load
 node src/simple-monitor.js --tps 5
 
-# Постепенно увеличивать нагрузку
+# Gradually increase load
 node src/simple-monitor.js --tps 10
 node src/simple-monitor.js --tps 20
 node src/simple-monitor.js --tps 50
 ```
 
-### Мониторинг существующей сети
+### Monitoring Existing Network
 
 ```bash
-# Только наблюдение за TPS без генерации нагрузки
+# Monitor TPS without generating load
 node src/simple-monitor.js --tps 0 --node ws://mainnet-node:9944
 ```
 
-### Локальное тестирование
+### Local Testing
 
 ```bash
-# Тестирование локальной ноды
+# Test local node
 node src/simple-monitor.js --node ws://localhost:9944 --tps 15
 ```
 
-## 🔍 Отличия от Legacy скрипта
+## 🔍 Differences from Legacy Script
 
-### ❌ Проблемы в оригинальном скрипте:
-1. **Неправильный тип транзакций**: `system.remark` вместо `balances.transfer`
-2. **Автоматический nonce**: приводил к отклонению транзакций
-3. **Измерение скорости отправки**: вместо реального TPS
-4. **Одноразовое выполнение**: отправка пакета и завершение
+### ❌ Problems in original script:
+1. **Wrong transaction type**: `system.remark` instead of `balances.transfer`
+2. **Automatic nonce**: led to transaction rejections
+3. **Sending speed measurement**: instead of real TPS
+4. **One-time execution**: send batch and exit
 
-### ✅ Исправления в Simple TPS Monitor:
-1. **Балансовые переводы** - реальные денежные переводы
-2. **Автоматический nonce** - корректная обработка множественных транзакций
-3. **Чтение блоков** - измерение реального TPS
-4. **Непрерывная работа** - настраиваемая частота отправки
-5. **Мониторинг блоков** - анализ в реальном времени
+### ✅ Fixes in Simple TPS Monitor:
+1. **Balance transfers** - real money transfers
+2. **Automatic nonce** - proper handling of multiple transactions
+3. **Block reading** - real TPS measurement
+4. **Continuous operation** - configurable sending frequency
+5. **Block monitoring** - real-time analysis
 
 ## 🛠️ Troubleshooting
 
-### Транзакции не проходят:
-- Проверьте баланс аккаунта Alice
-- Убедитесь, что нода доступна и работает
-- Проверьте правильность URL ноды
+### Transactions not going through:
+- Check Alice account balance
+- Ensure node is accessible and running
+- Verify node URL is correct
 
-### Низкий TPS:
-- Попробуйте уменьшить частоту отправки (--tps)
-- Проверьте загрузку ноды
-- Убедитесь, что нода не ограничивает TPS
+### Low TPS:
+- Try reducing sending frequency (--tps)
+- Check node load
+- Ensure node doesn't limit TPS
 
-### Ошибки подключения:
-- Проверьте доступность ноды
-- Убедитесь, что используется правильный WebSocket URL
-- Проверьте сетевые настройки
+### Connection errors:
+- Check node accessibility
+- Ensure correct WebSocket URL is used
+- Check network settings
 
-## 📈 Рекомендации по нагрузочному тестированию
+### Common Error Messages:
+- `Priority is too low`: Transaction pool is full, reduce TPS
+- `Transaction is outdated`: Nonce issue, restart the tool
+- `Connection failed`: Check node URL and network
+
+## 📈 Load Testing Recommendations
 
 ```bash
-# 1. Начните с мониторинга без нагрузки
+# 1. Start with monitoring without load
 node src/simple-monitor.js --tps 0
 
-# 2. Добавьте минимальную нагрузку
+# 2. Add minimal load
 node src/simple-monitor.js --tps 1
 
-# 3. Постепенно увеличивайте нагрузку
+# 3. Gradually increase load
 node src/simple-monitor.js --tps 5
 node src/simple-monitor.js --tps 10
 node src/simple-monitor.js --tps 20
 
-# 4. Найдите предельную нагрузку
+# 4. Find maximum load
 node src/simple-monitor.js --tps 50
 node src/simple-monitor.js --tps 100
 ```
 
-## 🎯 Результат
+## 🎯 Result
 
-Simple TPS Monitor предоставляет:
-- ✅ **Точное измерение TPS** - на основе данных блокчейна
-- ✅ **Правильную отправку транзакций** - с инкрементом nonce
-- ✅ **Реальную нагрузку** - балансовые переводы, а не просто сообщения
-- ✅ **Гибкость конфигурации** - параметр --tps для контроля нагрузки
-- ✅ **Простота использования** - один файл, одна команда запуска
+Simple TPS Monitor provides:
+- ✅ **Accurate TPS measurement** - based on blockchain data
+- ✅ **Proper transaction sending** - with nonce increment
+- ✅ **Real load** - balance transfers, not just messages
+- ✅ **Configuration flexibility** - --tps parameter for load control
+- ✅ **Ease of use** - single file, one command launch
 
-**Результат:** Надежный и точный инструмент для измерения производительности Polkadot/Substrate сетей.
+**Result:** Reliable and accurate tool for measuring Polkadot/Substrate network performance.
+
+## 📋 Requirements for Testing
+
+### Node Setup
+- Running Substrate/Polkadot node
+- WebSocket endpoint available (default: ws://localhost:9944)
+- Node configured for development/testing
+
+### Account Setup
+- Alice account with sufficient balance
+- Account should be able to send transactions
+- Recommended: Use development node with pre-funded accounts
+
+## 🔧 Development
+
+### Project Structure
+```
+tps-monitoring/
+├── src/
+│   └── simple-monitor.js    # Main application
+├── docs/
+│   └── problem-analysis.md  # Legacy script analysis
+├── package.json
+└── README.md
+```
+
+### Dependencies
+- `@polkadot/api` - Polkadot/Substrate API
+- `@polkadot/util-crypto` - Cryptographic utilities
+- `commander` - CLI argument parsing
+
+## 📄 License
+
+This project is unlicensed. All rights reserved.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+---
+
+**Note:** This tool is designed for testing and development purposes. Use responsibly and ensure you have proper permissions for the target network.

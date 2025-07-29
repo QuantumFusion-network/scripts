@@ -20,8 +20,8 @@
     "blockchain",
     "simple"
   ],
-  "author": "Your Name",
-  "license": "MIT",
+  "author": "Simple TPS Monitor Team",
+  "license": "UNLICENSED",
   "engines": {
     "node": ">=16.0.0"
   }
