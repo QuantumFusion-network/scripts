@@ -6,7 +6,6 @@
   "main": "src/simple-monitor.js",
   "scripts": {
     "start": "node src/simple-monitor.js",
-    "simple": "node src/simple-monitor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
