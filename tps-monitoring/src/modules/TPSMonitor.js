@@ -32,7 +32,7 @@ export class TPSMonitor {
     this.blockMonitor = new BlockMonitor()
     
     // Setup transaction sender
-    this.transactionSender.initialize()
+    await this.transactionSender.initialize()
     
     console.log('✅ Connected to blockchain')
   }
