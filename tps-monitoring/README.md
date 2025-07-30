@@ -1,6 +1,6 @@
 # 🚀 Simple TPS Monitor: Substrate TPS Measurement Tool
 
-A simple tool for measuring real TPS (transactions per second) in Polkadot/Substrate blockchains.
+A simple tool for measuring real TPS (transactions per second) in Polkadot/Substrate blockchains with modular architecture.
 
 ## 🎯 Features
 
@@ -12,6 +12,7 @@ A simple tool for measuring real TPS (transactions per second) in Polkadot/Subst
 - ✅ **Monitor-only mode** - --tps 0 for analysis without load generation
 - ✅ **Simple CLI interface** - one command to run
 - ✅ **Graceful shutdown** - proper termination with Ctrl+C
+- ✅ **Modular architecture** - clean separation of concerns
 
 ## 📦 Installation
 
@@ -30,25 +31,152 @@ npm install
 - Access to Polkadot/Substrate node via WebSocket
 - Alice account with balance for testing
 
+## 🏗️ How It Works - Modular Architecture
+
+### Project Structure
+```
+tps-monitoring/
+├── src/
+│   ├── index.js                    # CLI entry point
+│   ├── modules/
+│   │   ├── TPSMonitor.js          # Main coordinator
+│   │   ├── TransactionSender.js   # Transaction generation
+│   │   └── BlockMonitor.js        # Block monitoring & TPS calculation
+│   └── simple-monitor.js          # Legacy monolithic version
+```
+
+### System Flow
+
+#### 1. **Entry Point (index.js)**
+```javascript
+// Parse CLI arguments and create TPSMonitor instance
+const monitor = new TPSMonitor()
+await monitor.start(options)
+```
+
+**What happens:**
+- Parses command line arguments (`--node`, `--tps`)
+- Creates TPSMonitor instance
+- Starts the monitoring system
+
+#### 2. **Main Coordinator (TPSMonitor.js)**
+```javascript
+// Initialize blockchain connection and components
+await this.initialize(options.node)
+this.blockMonitor.startMonitoring(this.api)
+if (options.tps > 0) {
+  await this.transactionSender.startSending(options.tps)
+}
+```
+
+**What happens:**
+- Connects to blockchain via WebSocket
+- Initializes cryptography and keyring
+- Creates TransactionSender and BlockMonitor instances
+- Starts both monitoring and transaction sending (if enabled)
+- Handles graceful shutdown on Ctrl+C
+
+#### 3. **Transaction Sender (TransactionSender.js)**
+```javascript
+// Send transactions at specified TPS rate
+const intervalMs = 1000 / tpsTarget
+const sendTx = async () => {
+  const transfer = this.api.tx.balances.transferKeepAlive(this.alice.address, 1)
+  await transfer.signAndSend(this.alice)
+  setTimeout(sendTx, intervalMs)
+}
+```
+
+**What happens:**
+- Creates Alice test account
+- Sends `transferKeepAlive` transactions to self
+- Maintains specified TPS rate using `setTimeout`
+- Logs progress every 10 transactions
+- Can be stopped gracefully
+
+#### 4. **Block Monitor (BlockMonitor.js)**
+```javascript
+// Subscribe to new blocks and calculate TPS
+api.derive.chain.subscribeNewHeads(async (header) => {
+  const block = await api.rpc.chain.getBlock(header.hash)
+  const txCount = block.block.extrinsics.length
+  
+  // Store data and calculate TPS
+  this.blockTimes.push(now)
+  this.txCounts.push(txCount)
+  const avgTPS = this.calculateTPS()
+})
+```
+
+**What happens:**
+- Subscribes to new blocks via WebSocket
+- Extracts transaction count from each block
+- Maintains sliding window of last 10 blocks
+- Calculates real-time TPS: `total_transactions / time_span`
+- Displays statistics for each block
+
+### Component Interaction
+
+```
+┌─────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   index.js  │───▶│  TPSMonitor.js  │───▶│TransactionSender│
+│   (CLI)     │    │  (Coordinator)  │    │     .js         │
+└─────────────┘    └─────────────────┘    └─────────────────┘
+                          │                        │
+                          ▼                        │
+                   ┌─────────────────┐             │
+                   │ BlockMonitor.js │◀────────────┘
+                   │ (TPS Calculator)│   (API shared)
+                   └─────────────────┘
+```
+
+### Key Benefits of Modular Design
+
+#### **Separation of Concerns**
+- **TransactionSender**: Only handles transaction generation
+- **BlockMonitor**: Only handles block monitoring and TPS calculation
+- **TPSMonitor**: Only handles coordination and lifecycle
+- **index.js**: Only handles CLI interface
+
+#### **Testability**
+```javascript
+// Test components independently
+const sender = new TransactionSender(api, keyring)
+await sender.startSending(5)
+
+const monitor = new BlockMonitor()
+monitor.startMonitoring(api)
+```
+
+#### **Reusability**
+- TransactionSender can be used in other load testing tools
+- BlockMonitor can be extended for other blockchain metrics
+- TPSMonitor can be adapted for different blockchain networks
+
+#### **Maintainability**
+- Easy to find and fix bugs in specific components
+- Simple to add new features (e.g., different transaction types)
+- Clear interfaces between components
+
 ## 🚀 Usage
 
 ### Basic Command
 
 ```bash
 # Run with load generation (10 TPS by default)
-node src/simple-monitor.js
+node src/index.js
 
 # Connect to custom node
-node src/simple-monitor.js --node ws://your-node:9944
+node src/index.js --node ws://your-node:9944
 
 # Set target TPS
-node src/simple-monitor.js --tps 50
+node src/index.js --tps 50
 
 # Monitor only without load generation
-node src/simple-monitor.js --tps 0
+node src/index.js --tps 0
 
 # Full example
-node src/simple-monitor.js \
+node src/index.js \
   --node ws://localhost:9944 \
   --tps 25
 ```
@@ -100,26 +228,26 @@ Where:
 
 ```bash
 # Start with low load
-node src/simple-monitor.js --tps 5
+node src/index.js --tps 5
 
 # Gradually increase load
-node src/simple-monitor.js --tps 10
-node src/simple-monitor.js --tps 20
-node src/simple-monitor.js --tps 50
+node src/index.js --tps 10
+node src/index.js --tps 20
+node src/index.js --tps 50
 ```
 
 ### Monitoring Existing Network
 
 ```bash
 # Monitor TPS without generating load
-node src/simple-monitor.js --tps 0 --node ws://mainnet-node:9944
+node src/index.js --tps 0 --node ws://mainnet-node:9944
 ```
 
 ### Local Testing
 
 ```bash
 # Test local node
-node src/simple-monitor.js --node ws://localhost:9944 --tps 15
+node src/index.js --node ws://localhost:9944 --tps 15
 ```
 
 ## 🔍 Differences from Legacy Script
@@ -136,6 +264,7 @@ node src/simple-monitor.js --node ws://localhost:9944 --tps 15
 3. **Block reading** - real TPS measurement
 4. **Continuous operation** - configurable sending frequency
 5. **Block monitoring** - real-time analysis
+6. **Modular architecture** - clean separation of concerns
 
 ## 🛠️ Troubleshooting
 
@@ -163,19 +292,19 @@ node src/simple-monitor.js --node ws://localhost:9944 --tps 15
 
 ```bash
 # 1. Start with monitoring without load
-node src/simple-monitor.js --tps 0
+node src/index.js --tps 0
 
 # 2. Add minimal load
-node src/simple-monitor.js --tps 1
+node src/index.js --tps 1
 
 # 3. Gradually increase load
-node src/simple-monitor.js --tps 5
-node src/simple-monitor.js --tps 10
-node src/simple-monitor.js --tps 20
+node src/index.js --tps 5
+node src/index.js --tps 10
+node src/index.js --tps 20
 
 # 4. Find maximum load
-node src/simple-monitor.js --tps 50
-node src/simple-monitor.js --tps 100
+node src/index.js --tps 50
+node src/index.js --tps 100
 ```
 
 ## 🎯 Result
@@ -186,6 +315,7 @@ Simple TPS Monitor provides:
 - ✅ **Real load** - balance transfers, not just messages
 - ✅ **Configuration flexibility** - --tps parameter for load control
 - ✅ **Ease of use** - single file, one command launch
+- ✅ **Modular design** - clean architecture, easy to extend
 
 **Result:** Reliable and accurate tool for measuring Polkadot/Substrate network performance.
 
@@ -203,21 +333,34 @@ Simple TPS Monitor provides:
 
 ## 🔧 Development
 
-### Project Structure
-```
-tps-monitoring/
-├── src/
-│   └── simple-monitor.js    # Main application
-├── docs/
-│   └── problem-analysis.md  # Legacy script analysis
-├── package.json
-└── README.md
-```
-
 ### Dependencies
 - `@polkadot/api` - Polkadot/Substrate API
 - `@polkadot/util-crypto` - Cryptographic utilities
 - `commander` - CLI argument parsing
+
+### Architecture Benefits
+
+#### **Single Responsibility Principle (SRP)**
+- Each class has one responsibility
+- Easier to understand and maintain
+
+#### **Testability**
+```javascript
+// Can test components separately
+const sender = new TransactionSender(api, keyring)
+await sender.startSending(5)
+
+const monitor = new BlockMonitor()
+monitor.startMonitoring(api)
+```
+
+#### **Reusability**
+- TransactionSender can be used in other projects
+- BlockMonitor can be extended for other metrics
+
+#### **Extensibility**
+- Easy to add new transaction types
+- Can add new metrics to BlockMonitor
 
 ## 📄 License
 
