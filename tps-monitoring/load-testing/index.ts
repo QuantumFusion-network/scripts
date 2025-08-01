@@ -177,7 +177,7 @@ async function run() {
     for (; latest_block.date > initialTime; ) {
         try {
             latest_block = await getBlockStats(api, latest_block.parent);
-        } catch(err) {
+        } catch(err: any) {
             console.log("Cannot retrieve block info with error: " + err.toString());
             console.log("Most probably the state is pruned already, stopping");
             prunedFlag = true;
