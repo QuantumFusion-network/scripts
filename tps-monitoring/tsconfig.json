@@ -16,7 +16,7 @@
     "sourceMap": true
   },
   "include": [
-    "load-testing/**/*",
+    "sub-flood-script/**/*",
     "src/**/*"
   ],
   "exclude": [

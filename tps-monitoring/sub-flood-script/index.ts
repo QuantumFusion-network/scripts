@@ -134,13 +134,13 @@ async function run() {
           batchPromises.push(
             new Promise<number>(async resolve => {
               try {
-                // Получаем актуальный nonce для пользователя
-                let nonce = (await api.rpc.system.accountNextIndex(senderKeyPair.address)).toNumber();
+                let currentNonce = nonces[userNo];
                 let transfer = api.tx.balances.transferKeepAlive(aliceKeyPair.address, BigInt(TOKENS_TO_SEND));
                 await transfer.signAndSend(senderKeyPair, {
-                  nonce,
+                  nonce: currentNonce,
                   tip: 1
                 }, ({ status }) => {
+                  nonces[userNo]++;
                   if (status.isFinalized) {
                     Atomics.add(finalisedTxs, 0, 1);
                     let finalisationTimeCurrent = new Date().getTime() - initialTime.getTime();
