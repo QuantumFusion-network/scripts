@@ -1,3 +1,5 @@
+// === MAIN TPS MONITOR CLASS ===
+// Coordinates transaction sending and block monitoring
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { Keyring } from '@polkadot/keyring'
 import { cryptoWaitReady } from '@polkadot/util-crypto'
@@ -6,67 +8,83 @@ import { BlockMonitor } from './BlockMonitor.js'
 
 export class TPSMonitor {
   constructor() {
-    this.api = null
-    this.keyring = null
-    this.transactionSender = null
-    this.blockMonitor = null
-    this.isRunning = false
+    this.api = null               // Blockchain API connection
+    this.keyring = null           // Account keyring
+    this.transactionSender = null // Component for sending transactions
+    this.blockMonitor = null      // Component for monitoring blocks
+    this.isRunning = false        // Overall running status
   }
 
+  // === SETUP BLOCKCHAIN CONNECTION ===
+  // Connect to node and initialize all components
   async initialize(nodeUrl) {
     console.log('🚀 Starting Simple TPS Monitor...')
     console.log('📡 Connecting to:', nodeUrl)
     
-    // Initialize crypto
+    // === INITIALIZE CRYPTO ===
+    // Wait for cryptographic functions to be ready
     await cryptoWaitReady()
     
-    // Connect to node
+    // === CONNECT TO BLOCKCHAIN NODE ===
+    // Create WebSocket connection to blockchain
     const provider = new WsProvider(nodeUrl)
     this.api = await ApiPromise.create({ provider })
     
-    // Setup keyring
+    // === SETUP ACCOUNT MANAGEMENT ===
+    // Create keyring for managing accounts
     this.keyring = new Keyring({ type: 'sr25519' })
     
-    // Initialize components
+    // === INITIALIZE COMPONENTS ===
+    // Create transaction sender and block monitor
     this.transactionSender = new TransactionSender(this.api, this.keyring)
     this.blockMonitor = new BlockMonitor()
     
-    // Setup transaction sender
+    // === SETUP TRANSACTION SENDER ===
+    // Initialize Alice account and get starting nonce
     await this.transactionSender.initialize()
     
     console.log('✅ Connected to blockchain')
   }
 
+  // === START MONITORING ===
+  // Start both block monitoring and transaction sending
   async start(options) {
+    // Connect to blockchain first
     await this.initialize(options.node)
     
     this.isRunning = true
     
-    // Start monitoring blocks
+    // === START BLOCK MONITORING ===
+    // Begin monitoring new blocks for TPS calculation
     this.blockMonitor.startMonitoring(this.api)
     
-    // Start sending transactions if tps > 0
+    // === START TRANSACTION SENDING (IF REQUESTED) ===
+    // Only send transactions if TPS > 0
     if (options.tps > 0) {
       await this.transactionSender.startSending(options.tps)
     }
     
     console.log('\n⌨️  Press Ctrl+C to stop\n')
     
-    // Handle shutdown
+    // === SETUP GRACEFUL SHUTDOWN ===
+    // Handle Ctrl+C to stop cleanly
     process.on('SIGINT', () => {
       this.stop()
     })
   }
 
+  // === STOP MONITORING ===
+  // Stop all components and show final statistics
   stop() {
     console.log('\n👋 Stopping TPS Monitor...')
     this.isRunning = false
     
+    // === STOP TRANSACTION SENDING ===
     if (this.transactionSender) {
       this.transactionSender.stop()
     }
     
-    // Display final stats
+    // === DISPLAY FINAL STATISTICS ===
     if (this.blockMonitor) {
       const stats = this.blockMonitor.getStats()
       console.log(`\n📊 Final Stats:`)
@@ -76,13 +94,19 @@ export class TPSMonitor {
       console.log(`   Runtime: ${stats.runtime}s`)
     }
     
+    // Exit the program
     process.exit(0)
   }
 
+  // === GET CURRENT STATISTICS ===
+  // Return current monitoring stats
   getStats() {
     if (!this.blockMonitor) return null
     
+    // Get block monitoring stats
     const stats = this.blockMonitor.getStats()
+    
+    // Add transaction sending stats if available
     if (this.transactionSender) {
       stats.sentTx = this.transactionSender.getTxCount()
     }
