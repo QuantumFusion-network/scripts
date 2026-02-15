@@ -1,0 +1,38 @@
+{
+  "name": "tps-simple",
+  "version": "1.0.0",
+  "description": "Simple TPS measurement tool for Polkadot/Substrate blockchains",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "sub-flood": "tsx load-testing/index.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@polkadot/api": "^14.2.2",
+    "@polkadot/util-crypto": "^13.1.1",
+    "commander": "^11.1.0",
+    "minimist": "^1.2.8"
+  },
+  "devDependencies": {
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "polkadot",
+    "substrate",
+    "tps",
+    "blockchain",
+    "simple",
+    "load-testing"
+  ],
+  "author": "Simple TPS Monitor Team",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

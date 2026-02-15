@@ -1,0 +1,9 @@
+node_modules/
+
+
+
+*.log
+.DS_Store
+
+# Drafts folder for temporary files and notes
+drafts/
